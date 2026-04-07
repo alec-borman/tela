@@ -18,7 +18,7 @@ jobs:
       - name: Checkout Tela toolchain
         uses: actions/checkout@v4
         with:
-          repository: your-org/tela-toolchain # Replace with actual tela repo
+          repository: alec-borman/tela # Replace with actual tela repo
           path: tela-toolchain
 
       - name: Setup Rust

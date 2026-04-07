@@ -44,12 +44,10 @@ jobs:
           fi
 
           # Get current codebase vector
-          CODE_VECTOR_JSON=$($TELAC code-vector .)
-          echo "$CODE_VECTOR_JSON" > code_vector.json
+          $TELAC code-vector . > code_vector.json
           
           # Get target blueprint vector
-          TARGET_VECTOR_JSON=$($TELAC build $TARGET_FILE)
-          echo "$TARGET_VECTOR_JSON" > target_vector.json
+          $TELAC build $TARGET_FILE > target_vector.json
 
       - name: Calculate Cosine Similarity
         id: similarity

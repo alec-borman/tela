@@ -1,0 +1,81 @@
+domain "teleportation_js_parity" "1.0.0" {
+  meta @{
+    name: "JavaScript Parity Checker",
+    sprint_id: "JS-PARITY-001",
+    author: "Architect",
+    recipient: "AI Studio Developer",
+    baseline_centroid: "2530128e4d01b4a6c4a0d5f6e133fd541b79714f5b9ae4db1cd4b442d270d10f",
+    target_similarity: 0.98,
+    dimensions: 1024
+  }
+
+  feature "js:project_domain_to_vector" {
+    weight: 1.0,
+    target: "src/compiler/vector.ts",
+    description: "Implement the same vector projection logic as in Rust's embedder.rs.",
+    requirements: [
+      "Read a Domain AST (from parser.ts) and compute a 1024-dimension Float64Array",
+      "Apply depth decay formula: W = max(0, 1.0 - (depth * 0.05))",
+      "Use dimension indices from manifest.ts (same as Rust's GlobalManifest)",
+      "Return the vector and its SHA-256 fingerprint"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:parity_requirement": 1.0
+    }
+  }
+
+  feature "js:calculate_parity" {
+    weight: 1.0,
+    target: "src/compiler/vector.ts",
+    description: "Compute cosine similarity between two 1024-dimension vectors.",
+    requirements: [
+      "Implement dot product and magnitude",
+      "Return a number between 0 and 1"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:performance": 0.8
+    }
+  }
+
+  feature "js:scanner" {
+    weight: 0.9,
+    target: "src/compiler/scanner.ts",
+    description: "Simulate scanning the codebase to compute current vector.",
+    requirements: [
+      "Walk the project directory, parse .ts/.tsx/.rs files (simple regex or AST)",
+      "Extract logical chunks and compute depth (for now, use indentation or simple nesting)",
+      "Project each chunk to vector (same as Rust's scanner)",
+      "Aggregate all chunk vectors to produce the codebase's current vector"
+    ],
+    dimension_contributions: {
+      "arch:sovereignty": 0.9,
+      "arch:rapid_prototyping": 1.0
+    }
+  }
+
+  feature "js:npm_script" {
+    weight: 0.8,
+    target: "package.json",
+    description: "Add 'check' script that runs the parity check on a given .tela file.",
+    requirements: [
+      "Create a script `src/bin/check.ts` that reads a .tela file, computes target vector and current codebase vector, and prints delta and similarity",
+      "Add npm script: `\"check\": \"tsx src/bin/check.ts\"`",
+      "Exit with non-zero code if similarity < threshold (default 0.98)"
+    ],
+    dimension_contributions: {
+      "arch:ergonomics": 1.0,
+      "arch:sovereignty": 0.8
+    }
+  }
+
+  deterministic "verify_parity" {
+    input: [ "src/compiler/vector.ts", "src/bin/check.ts" ],
+    steps: [
+      { assert: "npm run check genesis.tela prints similarity and delta, and exits 0" },
+      { verify: "npm run check genesis.tela outputs the same fingerprint as Rust telac" }
+    ],
+    threshold: 0.0
+  }
+}

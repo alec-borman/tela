@@ -1,0 +1,72 @@
+domain "teleportation_parser" "1.0.0" {
+  meta @{
+    name: "Native .tela Parser",
+    sprint_id: "PARSER-001",
+    author: "Architect",
+    recipient: "Bifurcated Developer AI",
+    baseline_centroid: "2530128e4d01b4a6c4a0d5f6e133fd541b79714f5b9ae4db1cd4b442d270d10f",
+    target_similarity: 0.98,
+    dimensions: 1024
+  }
+
+  feature "parser:rust_lexer" {
+    weight: 1.0,
+    target: "src/parser/lexer.rs",
+    description: "Implement a LL(1) lexer for the .tela grammar.",
+    requirements: [
+      "Define Token type with variants for Keyword, String, Number, Ident, LBrace, RBrace, LBracket, RBracket, Colon, Comma, At, Eof",
+      "Implement a Lexer struct that iterates over characters and produces tokens",
+      "Handle errors gracefully (e.g., unexpected characters, unterminated strings)"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:grammar_strictness": 1.0
+    }
+  }
+
+  feature "parser:rust_parser" {
+    weight: 1.0,
+    target: "src/parser/parser.rs",
+    description: "Implement a recursive descent parser that builds Domain from tokens.",
+    requirements: [
+      "Parse domain: 'domain' STRING STRING '{' ... '}'",
+      "Parse meta block: 'meta' '@' '{' ... '}'",
+      "Parse feature blocks: 'feature' STRING '{' ... '}'",
+      "Parse deterministic blocks: 'deterministic' STRING '{' ... '}'",
+      "Parse arrays of strings (for requirements, input)",
+      "Parse record of string→number (for dimension_contributions)",
+      "Parse steps array (with assert/verify)",
+      "Return a Domain struct (defined in ast.rs) on success, or a custom ParseError"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:grammar_strictness": 1.0
+    }
+  }
+
+  feature "telac:integrate_parser" {
+    weight: 0.8,
+    target: "src/bin/telac.rs",
+    description: "Replace JSON deserialization with the new parser.",
+    requirements: [
+      "Read the file content (unchanged)",
+      "Call the parser to get Domain instead of serde_json::from_str",
+      "Handle parse errors and print them nicely",
+      "Remove dependency on JSON for input (keep for output)"
+    ],
+    dimension_contributions: {
+      "arch:sovereignty": 1.0,
+      "arch:determinism": 1.0
+    }
+  }
+
+  deterministic "verify_parser" {
+    input: [ "genesis.tela", "sprint_parser.tela" ],
+    steps: [
+      { assert: "telac build genesis.tela exits 0 and outputs a vector" },
+      { assert: "telac build sprint_parser.tela exits 0" },
+      { verify: "The vector from genesis.tela matches the previously computed fingerprint" }
+    ],
+    threshold: 0.0
+  }
+}

@@ -1,0 +1,120 @@
+name: Teleportation Delta Tracker
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  compute-delta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@v4
+        with:
+          path: target-repo
+
+      - name: Checkout Tela toolchain
+        uses: actions/checkout@v4
+        with:
+          repository: your-org/tela-toolchain # Replace with actual tela repo
+          path: tela-toolchain
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build telac
+        working-directory: ./tela-toolchain
+        run: cargo build --release --bin telac
+
+      - name: Compute Vectors
+        id: vectors
+        working-directory: ./target-repo
+        run: |
+          # Ensure telac is in PATH or call it directly
+          TELAC=../tela-toolchain/target/release/telac
+          
+          # Replace 'sprint_target.tela' with the actual target file in the repo
+          TARGET_FILE="sprint_target.tela"
+          
+          if [ ! -f "$TARGET_FILE" ]; then
+            echo "Target file $TARGET_FILE not found. Skipping delta computation."
+            exit 0
+          fi
+
+          # Get current codebase vector
+          CODE_VECTOR_JSON=$($TELAC code-vector .)
+          echo "$CODE_VECTOR_JSON" > code_vector.json
+          
+          # Get target blueprint vector
+          TARGET_VECTOR_JSON=$($TELAC build $TARGET_FILE)
+          echo "$TARGET_VECTOR_JSON" > target_vector.json
+
+      - name: Calculate Cosine Similarity
+        id: similarity
+        working-directory: ./target-repo
+        run: |
+          python3 -c '
+          import json
+          import math
+          import sys
+
+          try:
+              with open("code_vector.json", "r") as f:
+                  code_data = json.load(f)
+              with open("target_vector.json", "r") as f:
+                  target_data = json.load(f)
+              
+              v1 = code_data.get("vector", [])
+              v2 = target_data.get("vector", [])
+              
+              if not v1 or not v2 or len(v1) != len(v2):
+                  print("Error: Invalid or mismatched vectors.")
+                  sys.exit(1)
+
+              dot_product = sum(a * b for a, b in zip(v1, v2))
+              mag1 = math.sqrt(sum(a * a for a in v1))
+              mag2 = math.sqrt(sum(b * b for b in v2))
+              
+              if mag1 == 0 or mag2 == 0:
+                  similarity = 0.0
+              else:
+                  similarity = dot_product / (mag1 * mag2)
+              
+              delta = 1.0 - similarity
+              
+              print(f"similarity={similarity:.4f}")
+              print(f"delta={delta:.4f}")
+              
+              with open(sys.argv[1], "a") as env_file:
+                  env_file.write(f"SIMILARITY={similarity:.4f}\n")
+                  env_file.write(f"DELTA={delta:.4f}\n")
+                  
+          except Exception as e:
+              print(f"Error computing similarity: {e}")
+              sys.exit(1)
+          ' $GITHUB_ENV
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request' && env.SIMILARITY != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const similarity = process.env.SIMILARITY;
+            const delta = process.env.DELTA;
+            const threshold = 0.98;
+            
+            let status = "✅ Parity Achieved";
+            if (parseFloat(similarity) < threshold) {
+              status = "⚠️ Parity Threshold Not Met";
+            }
+
+            const body = `### 🌌 Teleportation Delta Report\n\n**Status:** ${status}\n**Cosine Similarity:** \`${similarity}\`\n**Vector Delta (Δ):** \`${delta}\`\n\n*Target Threshold: \`${threshold}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })

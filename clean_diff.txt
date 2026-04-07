@@ -1,0 +1,285 @@
+--- a/src/indexer/lance_db.ts
++++ b/src/indexer/lance_db.ts
+@@ -0,0 +1,44 @@
++import * as lancedb from '@lancedb/lancedb';
++import * as arrow from 'apache-arrow';
++
++export class LanceDBManager {
++  private dbPath: string;
++  private db: lancedb.Connection | null = null;
++  public readonly tableName = 'code_chunks';
++
++  constructor(dbPath: string = '.lancedb') {
++    this.dbPath = dbPath;
++  }
++
++  async connect() {
++    this.db = await lancedb.connect(this.dbPath);
++  }
++
++  getSchema() {
++    return new arrow.Schema([
++      new arrow.Field('vector', new arrow.FixedSizeList(1024, new arrow.Field('item', new arrow.Float64(), true)), false),
++      new arrow.Field('filePath', new arrow.Utf8(), false),
++      new arrow.Field('content', new arrow.Utf8(), false)
++    ]);
++  }
++
++  async getOrCreateTable() {
++    if (!this.db) await this.connect();
++    
++    const tableNames = await this.db!.tableNames();
++    if (tableNames.includes(this.tableName)) {
++      return await this.db!.openTable(this.tableName);
++    } else {
++      // Create empty table with schema
++      return await this.db!.createEmptyTable(this.tableName, this.getSchema());
++    }
++  }
++
++  async dropTable() {
++    if (!this.db) await this.connect();
++    const tableNames = await this.db!.tableNames();
++    if (tableNames.includes(this.tableName)) {
++      await this.db!.dropTable(this.tableName);
++    }
++  }
++}
+
+--- a/src/indexer/dir.ts
++++ b/src/indexer/dir.ts
+@@ -0,0 +1,53 @@
++import { LanceDBManager } from './lance_db';
++import { Scanner } from '../compiler/scanner';
++
++export class DIREngine {
++  private dbManager: LanceDBManager;
++
++  constructor() {
++    this.dbManager = new LanceDBManager();
++  }
++
++  async indexDirectory(dirPath: string) {
++    const scanner = new Scanner(dirPath);
++    const chunks = scanner.scanDirectory();
++
++    await this.dbManager.dropTable(); // Re-index everything
++    const table = await this.dbManager.getOrCreateTable();
++
++    // Prepare data for LanceDB
++    const data = chunks.map(chunk => ({
++      vector: Array.from(chunk.vector),
++      filePath: chunk.filePath,
++      content: chunk.content
++    }));
++
++    if (data.length > 0) {
++      await table.add(data);
++    }
++  }
++
++  async retrieve(targetVector: Float64Array, threshold: number, limit: number = 5) {
++    const table = await this.dbManager.getOrCreateTable();
++    
++    // Query LanceDB
++    const results = await table.search(Array.from(targetVector))
++      .distanceType('cosine')
++      .limit(limit)
++      .toArray();
++
++    // Filter by threshold. LanceDB cosine distance is 1 - cosine_similarity.
++    // So similarity = 1 - distance.
++    const filtered = results.filter(r => {
++      const distance = (r as any)._distance;
++      const similarity = 1 - distance;
++      return similarity > threshold;
++    });
++
++    return filtered.map(r => ({
++      filePath: r.filePath as string,
++      content: r.content as string,
++      similarity: 1 - (r as any)._distance
++    }));
++  }
++}
+
+--- a/src/bin/check.ts
++++ b/src/bin/check.ts
+@@ -154,10 +154,8 @@
+       process.exit(0);
+       break;
+     }
+     case 'build':
+-    case 'retrieve':
+-    case 'delta':
+     case 'sustain': {
+       if (args.length < 2 && command !== 'sustain') {
+         console.error('Tela: Teleportation & Tell a Story');
+         console.error(`Usage: tsx src/bin/check.ts ${command} <path-to-tela-file>`);
+@@ -189,40 +187,92 @@
+       const targetFingerprint = computeFingerprint(targetVector);
+ 
+       if (command === 'build') {
+         console.log(JSON.stringify({ vector: Array.from(targetVector), fingerprint: targetFingerprint }, null, 2));
+-      } else if (command === 'retrieve') {
+-        console.log('// Deterministic Intent Retrieval (DIR) Results');
+-        console.log(`// Target: ${domain.meta.name}`);
+-        console.log('// Threshold: > 0.85\n');
+-        console.log('// No chunks found matching the geometric intent.');
+-      } else if (command === 'delta') {
+-        const scanner = new Scanner(process.cwd());
+-        const chunks = scanner.scanDirectory();
+-        const currentVector = scanner.aggregateVectors(chunks);
+-        const currentFingerprint = computeFingerprint(currentVector);
++      }
++      break;
++    }
++    case 'retrieve': {
++      let targetPath = '';
++      let threshold = 0.85;
++      for (let i = 1; i < args.length; i++) {
++        if (args[i] === '--threshold' && i + 1 < args.length) {
++          threshold = parseFloat(args[i + 1]);
++          i++;
++        } else if (!args[i].startsWith('--')) {
++          targetPath = args[i];
++        }
++      }
+ 
+-        const similarity = calculateParity(targetVector, currentVector);
+-        const threshold = domain.meta.target_similarity || 0.98;
++      if (!targetPath) {
++        console.error('Usage: tsx src/bin/check.ts retrieve <target.json> [--threshold <number>]');
++        process.exit(1);
++      }
+ 
+-        console.log('// JavaScript Parity Checker');
+-        console.log(`// Sprint: ${domain.meta.name} (${domain.meta.sprint_id})`);
+-        console.log(`// Target Fingerprint: ${targetFingerprint}`);
+-        console.log(`// Current Fingerprint: ${currentFingerprint}`);
+-        console.log(`// Similarity: ${similarity.toFixed(4)}`);
+-        console.log(`// Threshold: ${threshold.toFixed(4)}`);
++      const targetData = JSON.parse(fs.readFileSync(targetPath, 'utf-8'));
++      const targetVector = new Float64Array(targetData.vector);
+ 
+-        if (similarity >= threshold) {
+-          console.log('// Status: PARITY ACHIEVED');
+-          process.exit(0);
+-        } else {
+-          console.error('// Status: ARCHITECTURAL REGRESSION');
+-          console.error(`// Delta: ${(threshold - similarity).toFixed(4)}`);
+-          process.exit(1);
++      const { DIREngine } = await import('../indexer/dir');
++      const engine = new DIREngine();
++      
++      await engine.indexDirectory(process.cwd());
++      const results = await engine.retrieve(targetVector, threshold);
++
++      console.log('// Deterministic Intent Retrieval (DIR) Results');
++      console.log(`// Target: ${targetPath}`);
++      console.log(`// Threshold: > ${threshold.toFixed(2)}\n`);
++      
++      if (results.length === 0) {
++        console.log('// No chunks found matching the geometric intent.');
++      } else {
++        for (const result of results) {
++          console.log(`// Match: ${result.filePath} (Similarity: ${result.similarity.toFixed(4)})`);
++          console.log(result.content);
++          console.log('---');
+         }
+       }
+       break;
+     }
++    case 'delta': {
++      let targetPath = '';
++      let currentPath = '';
++      for (let i = 1; i < args.length; i++) {
++        if (args[i] === '--target' && i + 1 < args.length) {
++          targetPath = args[i + 1];
++        } else if (args[i] === '--current' && i + 1 < args.length) {
++          currentPath = args[i + 1];
++        }
++      }
++
++      if (!targetPath || !currentPath) {
++        console.error('Usage: tsx src/bin/check.ts delta --target <target.json> --current <current.json>');
++        process.exit(1);
++      }
++
++      const targetData = JSON.parse(fs.readFileSync(targetPath, 'utf-8'));
++      const currentData = JSON.parse(fs.readFileSync(currentPath, 'utf-8'));
++
++      const targetVector = new Float64Array(targetData.vector);
++      const currentVector = new Float64Array(currentData.vector);
++
++      const similarity = calculateParity(targetVector, currentVector);
++      const delta = 1 - similarity;
++      const threshold = 0.02;
++
++      console.log('// JavaScript Parity Checker');
++      console.log(`// Similarity: ${similarity.toFixed(4)}`);
++      console.log(`// Delta: ${delta.toFixed(4)}`);
++      console.log(`// Threshold: ${threshold.toFixed(4)}`);
++
++      if (delta <= threshold) {
++        console.log('// Status: PARITY ACHIEVED');
++        process.exit(0);
++      } else {
++        console.error('// Status: ARCHITECTURAL REGRESSION');
++        process.exit(1);
++      }
++      break;
++    }
+     default:
+       console.error(`Unknown command: ${command}`);
+       process.exit(1);
+   }
+
+--- a/package.json
++++ b/package.json
+--- package.json	
++++ package.json	
+@@ -0,0 +1,42 @@
++{
++  "name": "teleportation-master-builder",
++  "private": true,
++  "version": "3.0.0",
++  "description": "The Universal Parts Bin for the Teleportation Protocol. Build deterministic software like interlocking bricks on a 1024-dimensional baseplate.",
++  "type": "module",
++  "scripts": {
++    "dev": "vite --port=3000 --host=0.0.0.0",
++    "build": "vite build",
++    "preview": "vite preview",
++    "clean": "rm -rf dist",
++    "lint": "tsc --noEmit",
++    "check": "tsx src/bin/check.ts",
++    "build:extension": "cd tooling/vscode-tela && npm install && npm run compile"
++  },
++  "dependencies": {
++    "@google/genai": "^1.29.0",
++    "@lancedb/lancedb": "^0.27.2",
++    "@tailwindcss/vite": "^4.1.14",
++    "@vitejs/plugin-react": "^5.0.4",
++    "apache-arrow": "^18.1.0",
++    "diff": "^8.0.4",
++    "dotenv": "^17.2.3",
++    "express": "^4.21.2",
++    "lucide-react": "^0.546.0",
++    "motion": "^12.23.24",
++    "react": "^19.0.0",
++    "react-dom": "^19.0.0",
++    "tree-sitter": "^0.21.1",
++    "tree-sitter-typescript": "^0.23.2",
++    "vite": "^6.2.0"
++  },
++  "devDependencies": {
++    "@types/express": "^4.17.21",
++    "@types/node": "^22.14.0",
++    "autoprefixer": "^10.4.21",
++    "tailwindcss": "^4.1.14",
++    "tsx": "^4.21.0",
++    "typescript": "~5.8.2",
++    "vite": "^6.2.0"
++  }
++}
+

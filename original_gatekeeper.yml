@@ -1,0 +1,62 @@
+name: Teleportation Gatekeeper
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  gatekeeper:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install JS dependencies
+        run: npm install
+        
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        
+      - name: Build telac
+        run: cargo build --release
+        
+      - name: Run JS Parity Check
+        run: |
+          # Find all .tela files in the PR and run check
+          for f in $(find . -name "*.tela"); do
+            echo "Checking $f..."
+            npm run check "$f"
+          done
+          
+      - name: Run Rust Delta Check
+        id: delta_check
+        run: |
+          # Run telac delta for the primary .tela file (assuming sprint_complete.tela for now)
+          # In a real scenario, this would dynamically select the relevant .tela file
+          delta=$(./target/release/telac delta sprint_complete.tela)
+          echo "delta=$delta" >> $GITHUB_OUTPUT
+          
+      - name: Post PR Comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const delta = '${{ steps.delta_check.outputs.delta }}';
+            const body = `### Teleportation Gatekeeper Results 🚀\n\n**Rust Delta Check:** \`${delta}\`\n\nIf the delta is below the threshold (e.g., 0.98), please review the architectural alignment.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          
+      - name: Verify Fingerprints
+        run: |
+          # Ensure .tela files match their fingerprints
+          # In a real CI, we would compare against the baseline in the PR
+          echo "Verifying fingerprints..."

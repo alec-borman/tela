@@ -1,0 +1,64 @@
+domain "teleportation_steel_repair" "1.0.0" {
+  meta @{
+    name: "Fix Serialization & Compiler Warnings",
+    sprint_id: "FIX-SERIALIZE-001",
+    author: "Architect",
+    recipient: "Bifurcated Developer AI",
+    baseline_centroid: "2530128e4d01b4a6c4a0d5f6e133fd541b79714f5b9ae4db1cd4b442d270d10f",
+    target_similarity: 0.98,
+    dimensions: 1024
+  }
+
+  feature "steel:vector_serialization" {
+    weight: 1.0,
+    target: "src/compiler/embedder.rs",
+    description: "Wrap [f64; 1024] in a newtype Vector1024 and implement Serialize manually to allow serde_json serialization of the vector.",
+    requirements: [
+      "Define struct Vector1024(pub [f64; 1024])",
+      "Implement serde::Serialize for Vector1024 (manually serialize as sequence of 1024 floats)",
+      "Change EmbeddingResult's vector field type to Vector1024",
+      "Update project_domain_to_vector to return Vector1024",
+      "Adjust any code that expects raw array to use vector.0"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:memory_safety": 0.5
+    }
+  }
+
+  feature "steel:unused_import" {
+    weight: 0.5,
+    target: "src/compiler/embedder.rs",
+    description: "Remove unused `Deserialize` import from serde.",
+    requirements: [
+      "Change `use serde::{Serialize, Deserialize};` to `use serde::Serialize;`"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 0.9,
+      "arch:ergonomics": 0.7
+    }
+  }
+
+  feature "steel:unused_variable_warning" {
+    weight: 0.3,
+    target: "src/compiler/scanner.rs",
+    description: "Fix unused variable `i` warning in scanner loop.",
+    requirements: [
+      "Change `for (i, block)` to `for (_i, block)` in the scanner's extract_chunks method"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 0.9,
+      "arch:ergonomics": 0.7
+    }
+  }
+
+  deterministic "verify_fix" {
+    input: [ "src/compiler/embedder.rs", "src/compiler/scanner.rs" ],
+    steps: [
+      { assert: "cargo build --lib completes without errors" },
+      { assert: "cargo test passes all tests" },
+      { verify: "telac build genesis.tela outputs valid JSON with 'vector' field containing 1024 numbers" }
+    ],
+    threshold: 0.0
+  }
+}

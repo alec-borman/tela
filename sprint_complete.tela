@@ -1,0 +1,177 @@
+domain "teleportation_complete" "1.0.0" {
+  meta @{
+    name: "Complete the Teleportation Protocol",
+    sprint_id: "FINAL-COMPLETE",
+    author: "Architect",
+    recipient: "AI Studio Developer",
+    baseline_centroid: "c6fc0e3a642beb65a2f5f02768bd3b42378221efa99e64cf06e9f903b7dfc06b",
+    target_similarity: 0.98,
+    dimensions: 1024
+  }
+
+  feature "core:ast_scanner_rust" {
+    weight: 1.0,
+    target: "src/compiler/scanner.rs",
+    description: "Replace simulated chunking with tree-sitter AST extraction for Rust files.",
+    requirements: [
+      "Add tree-sitter and tree-sitter-rust to Cargo.toml",
+      "Parse .rs files, extract functions, structs, impls, and top-level statements as logical chunks",
+      "Compute depth as nesting level (0 = root, 1 = inside function, etc.)",
+      "Apply depth decay formula (W = max(0, 1.0 - (depth * 0.05))) to each chunk's vector",
+      "Store each chunk with its vector and file path"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:sovereignty": 0.9
+    }
+  }
+
+  feature "core:ast_scanner_ts" {
+    weight: 1.0,
+    target: "src/compiler/scanner.ts",
+    description: "Replace simulated chunking with tree-sitter AST extraction for TypeScript files.",
+    requirements: [
+      "Add tree-sitter and tree-sitter-typescript as dev dependencies (or use a Node binding)",
+      "Parse .ts/.tsx files, extract functions, components, and top-level statements",
+      "Compute depth and apply decay",
+      "Store each chunk with its vector"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:sovereignty": 0.9
+    }
+  }
+
+  feature "core:dir_indexer" {
+    weight: 1.0,
+    target: "src/indexer/dir.rs, src/indexer/lance_db.rs",
+    description: "Implement Deterministic Intent Retrieval (DIR) using LanceDB.",
+    requirements: [
+      "Add lance-rs to Cargo.toml (or use lance in Rust)",
+      "Store each code chunk with its vector in a local LanceDB table",
+      "Implement `telac retrieve` to query by geometric DNA (cosine similarity)",
+      "Return the top-k chunks with similarity > threshold"
+    ],
+    dimension_contributions: {
+      "arch:performance": 0.9,
+      "arch:determinism": 1.0
+    }
+  }
+
+  feature "ci:gatekeeper" {
+    weight: 0.9,
+    target: ".github/workflows/gatekeeper.yml",
+    description: "Create GitHub Action that enforces the Teleportation Protocol on every PR.",
+    requirements: [
+      "Run `npm run check` and `cargo run --bin telac delta` on the merged code",
+      "If similarity < threshold (0.98) or missing .tela, comment on PR and close it",
+      "Also ensure that any .tela file changes have a corresponding fingerprint update"
+    ],
+    dimension_contributions: {
+      "arch:sovereignty": 1.0,
+      "arch:determinism": 1.0
+    }
+  }
+
+  feature "core:track_c_sandbox" {
+    weight: 0.8,
+    target: "src/oracle/track_c.rs",
+    description: "Complete the Track C Sandbox with Oracle Replay Tape.",
+    requirements: [
+      "When an external API is called, freeze the response JSON and its SHA-256 hash into a local fixture",
+      "On subsequent runs, bypass network and replay from the fixture",
+      "Provide FFI functions to freeze and replay payloads",
+      "Ensure all external interactions are deterministic"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:sovereignty": 1.0
+    }
+  }
+
+  feature "daemon:telad_enhancements" {
+    weight: 0.7,
+    target: "src/bin/telad.rs",
+    description: "Add missing endpoints and integrate with the DIR indexer.",
+    requirements: [
+      "Add /retrieve endpoint that returns matching chunks",
+      "Add /delta endpoint that compares two vectors",
+      "Add /status endpoint that returns current codebase fingerprint",
+      "Integrate with the indexer to serve queries"
+    ],
+    dimension_contributions: {
+      "arch:ergonomics": 0.8,
+      "arch:performance": 0.7
+    }
+  }
+
+  feature "vscode:extension" {
+    weight: 0.6,
+    target: "tooling/vscode-tela",
+    description: "Enhance the VS Code extension with real-time feedback.",
+    requirements: [
+      "Add syntax highlighting (already present)",
+      "Add diagnostics for .tela files (parse errors, dimension checks)",
+      "Show current vector fingerprint on hover",
+      "Provide command to run `telac check` and display delta"
+    ],
+    dimension_contributions: {
+      "arch:ergonomics": 1.0,
+      "arch:rapid_prototyping": 0.8
+    }
+  }
+
+  feature "docs:codice" {
+    weight: 0.5,
+    target: "docs/manifesto.md, README.md",
+    description: "Update documentation to reflect the completed system.",
+    requirements: [
+      "Write a user guide for writing .tela files",
+      "Document the vector space and dimension axes",
+      "Explain the feedback loop for AI developers",
+      "Include examples for building a simple app"
+    ],
+    dimension_contributions: {
+      "arch:ergonomics": 1.0
+    }
+  }
+
+  feature "tests:end_to_end" {
+    weight: 0.5,
+    target: "tests/integration.rs",
+    description: "Add integration tests that run a full .tela sprint through the pipeline.",
+    requirements: [
+      "Create a temporary repository with a sample .tela file",
+      "Run `telac build` and verify vector and fingerprint",
+      "Run `telac delta` and assert similarity = 1.0",
+      "Ensure the entire pipeline (including Rust and TypeScript) works"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:sovereignty": 0.9
+    }
+  }
+
+  deterministic "verify_all" {
+    input: [
+      "src/compiler/scanner.rs",
+      "src/compiler/scanner.ts",
+      "src/indexer/",
+      ".github/workflows/gatekeeper.yml",
+      "src/oracle/track_c.rs",
+      "src/bin/telad.rs",
+      "tooling/vscode-tela/",
+      "docs/",
+      "tests/integration.rs"
+    ],
+    steps: [
+      { assert: "cargo test passes all tests" },
+      { assert: "npm test passes all TypeScript tests" },
+      { verify: "telac retrieve returns non-empty results for a known vector" },
+      { verify: "Track C replay works with a mock API call" },
+      { verify: "VS Code extension activates and shows no errors" },
+      { verify: "The end-to-end integration test passes" }
+    ],
+    threshold: 0.0
+  }
+}

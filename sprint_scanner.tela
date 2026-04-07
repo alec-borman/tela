@@ -1,0 +1,41 @@
+domain "teleportation_scanner" "1.0.0" {
+  meta @{
+    name: "AST-Aware Scanner",
+    sprint_id: "SCANNER-002",
+    author: "Architect",
+    recipient: "Bifurcated Developer AI",
+    baseline_centroid: "2530128e4d01b4a6c4a0d5f6e133fd541b79714f5b9ae4db1cd4b442d270d10f",
+    target_similarity: 0.98,
+    dimensions: 1024
+  }
+
+  feature "scanner:tree_sitter" {
+    weight: 1.0,
+    target: "src/compiler/scanner.rs",
+    description: "Replace simulated chunking with tree-sitter AST extraction.",
+    requirements: [
+      "Add tree-sitter, tree-sitter-rust, tree-sitter-typescript to Cargo.toml",
+      "Implement parsing for .rs files (Rust) and .ts/.tsx files (TypeScript)",
+      "Extract functions, structs, impls, and top-level statements as chunks",
+      "Compute depth as nesting level (0 = root, 1 = inside function, etc.)",
+      "Apply Depth Decay Formula to chunk vectors based on depth",
+      "Store chunks in an in-memory vector database (or LanceDB)",
+      "Update `telac retrieve` to query by geometric intent"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:sovereignty": 0.9,
+      "arch:performance": 0.7
+    }
+  }
+
+  deterministic "verify_retrieve" {
+    input: [ "src/compiler/scanner.rs", "src/bin/telac.rs" ],
+    steps: [
+      { assert: "cargo test passes" },
+      { verify: "telac retrieve returns non-empty chunks for a known vector" },
+      { verify: "Chunk depths are consistent with AST nesting" }
+    ],
+    threshold: 0.0
+  }
+}

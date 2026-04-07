@@ -1,0 +1,36 @@
+domain "teleportation_genesis" "1.0.0" {
+  meta @{
+    name: "Genesis 1.0: The First Intent",
+    sprint_id: "GENESIS-001",
+    author: "Architect",
+    recipient: "Bifurcated Developer AI",
+    baseline_centroid: "embed:centroid:null",
+    target_similarity: 1.0,
+    dimensions: 1024
+  }
+
+  feature "system:verify_toolchain" {
+    weight: 1.0,
+    target: ".",
+    description: "Verify that the telac binary can parse, embed, and output a vector.",
+    requirements: [
+      "Execute `telac build genesis.tela` and obtain a JSON vector output",
+      "Ensure fingerprint is a valid SHA-256 hex string",
+      "No errors or panics during execution"
+    ],
+    dimension_contributions: {
+      "arch:determinism": 1.0,
+      "arch:sovereignty": 1.0
+    }
+  }
+
+  deterministic "run_build" {
+    input: [ "genesis.tela" ],
+    steps: [
+      { assert: "telac build genesis.tela returns exit code 0" },
+      { verify: "Output contains field 'vector' with 1024 numbers" },
+      { verify: "Output contains field 'fingerprint' with 64 hex chars" }
+    ],
+    threshold: 0.0
+  }
+}

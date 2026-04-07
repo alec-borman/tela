@@ -1,0 +1,133 @@
+use axum::{
+    routing::{get, post},
+    Router,
+    Json,
+};
+use serde::{Deserialize, Serialize};
+use std::path::Path;
+use teleportation_steel::parser::ast::Domain;
+use teleportation_steel::compiler::embedder::{project_domain_to_vector, EmbeddingResult, Vector1024};
+use teleportation_steel::compiler::delta::calculate_parity;
+use teleportation_steel::compiler::scanner::Scanner;
+use sha2::{Sha256, Digest};
+
+#[derive(Deserialize)]
+struct ProjectRequest {
+    ast: Domain,
+}
+
+#[derive(Deserialize)]
+struct DeltaRequest {
+    vector_a: Vector1024,
+    vector_b: Vector1024,
+}
+
+#[derive(Serialize)]
+struct DeltaResponse {
+    similarity: f64,
+}
+
+#[derive(Deserialize)]
+struct RetrieveRequest {
+    target_vector: Vector1024,
+    threshold: f64,
+}
+
+#[derive(Serialize)]
+struct RetrieveResponse {
+    matches: Vec<ChunkMatch>,
+}
+
+#[derive(Serialize)]
+struct ChunkMatch {
+    file_path: String,
+    content: String,
+    similarity: f64,
+}
+
+#[derive(Serialize)]
+struct StatusResponse {
+    fingerprint: String,
+    chunk_count: usize,
+}
+
+async fn project_handler(Json(payload): Json<ProjectRequest>) -> Json<EmbeddingResult> {
+    let vector = project_domain_to_vector(&payload.ast);
+    
+    let vector_json = serde_json::to_string(&vector).unwrap();
+    let mut hasher = Sha256::new();
+    hasher.update(vector_json.as_bytes());
+    let result_hash = hasher.finalize();
+    let fingerprint = format!("{:x}", result_hash);
+    
+    Json(EmbeddingResult {
+        vector,
+        fingerprint,
+    })
+}
+
+async fn delta_handler(Json(payload): Json<DeltaRequest>) -> Json<DeltaResponse> {
+    let similarity = calculate_parity(payload.vector_a.0.as_ptr(), payload.vector_b.0.as_ptr());
+    Json(DeltaResponse { similarity })
+}
+
+async fn retrieve_handler(Json(payload): Json<RetrieveRequest>) -> Json<RetrieveResponse> {
+    let scanner = Scanner::new();
+    let chunks = scanner.scan_directory(Path::new("."));
+    
+    let mut matches = Vec::new();
+    
+    for chunk in chunks {
+        let similarity = calculate_parity(payload.target_vector.0.as_ptr(), chunk.vector.as_ptr());
+        if similarity >= payload.threshold {
+            matches.push(ChunkMatch {
+                file_path: chunk.file_path,
+                content: chunk.content,
+                similarity,
+            });
+        }
+    }
+    
+    matches.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
+    
+    Json(RetrieveResponse { matches })
+}
+
+async fn status_handler() -> Json<StatusResponse> {
+    let scanner = Scanner::new();
+    let chunks = scanner.scan_directory(Path::new("."));
+    
+    let mut total_vector = [0.0; 1024];
+    for chunk in &chunks {
+        for i in 0..1024 {
+            total_vector[i] += chunk.vector[i];
+        }
+    }
+    
+    let wrapped_total_vector = Vector1024(total_vector);
+    let vector_json = serde_json::to_string(&wrapped_total_vector).unwrap();
+    let mut hasher = Sha256::new();
+    hasher.update(vector_json.as_bytes());
+    let result_hash = hasher.finalize();
+    let fingerprint = format!("{:x}", result_hash);
+    
+    Json(StatusResponse {
+        fingerprint,
+        chunk_count: chunks.len(),
+    })
+}
+
+#[tokio::main]
+async fn main() {
+    // Build our application with a route
+    let app = Router::new()
+        .route("/project", post(project_handler))
+        .route("/delta", post(delta_handler))
+        .route("/retrieve", post(retrieve_handler))
+        .route("/status", get(status_handler));
+
+    // Run our app with hyper, listening globally on port 3001
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
+    println!("Sovereign Daemon listening on {}", listener.local_addr().unwrap());
+    axum::serve(listener, app).await.unwrap();
+}

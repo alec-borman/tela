@@ -3,7 +3,7 @@ pub mod compiler;
 pub mod domains;
 pub mod hardware;
 pub mod oracle;
-// pub mod indexer;
+pub mod indexer;
 mod timeline;
 
 #[no_mangle]

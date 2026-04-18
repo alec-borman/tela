@@ -1,9 +1,9 @@
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
-use std::path::Path;
 use sha2::{Sha256, Digest};
 use teleportation_steel::compiler::scanner::Scanner;
+use teleportation_steel::compiler::embedder::Vector1024;
 
 struct LanceDbConnection;
 
@@ -63,7 +63,8 @@ impl LanguageServer for Backend {
                 let chunks = scanner.scan_directory(parent);
                 let current_vector = scanner.centroid(&chunks, false);
 
-                let vector_json = serde_json::to_string(&current_vector).unwrap();
+                let wrapped_vector = Vector1024(current_vector);
+                let vector_json = serde_json::to_string(&wrapped_vector).unwrap();
                 let mut hasher = Sha256::new();
                 hasher.update(vector_json.as_bytes());
                 let result_hash = hasher.finalize();

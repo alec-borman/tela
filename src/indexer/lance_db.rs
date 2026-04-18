@@ -1,5 +1,5 @@
 use lance::dataset::Dataset;
-use arrow::array::{Float32Array, StringArray, RecordBatch, RecordBatchIterator, AsArray};
+use arrow::array::{Float32Array, StringArray, RecordBatch, RecordBatchIterator, Array};
 use arrow::datatypes::{Schema, Field, DataType};
 use std::sync::Arc;
 use futures::StreamExt;
@@ -53,7 +53,7 @@ impl LanceDbConnection {
         };
 
         let mut scanner = dataset.scan();
-        let mut stream = match scanner.nearest("vector", Float32Array::from(target_vector.to_vec()), 10) {
+        let mut stream = match scanner.nearest("vector", &Float32Array::from(target_vector.to_vec()), 10) {
             Ok(s) => match s.try_into_stream().await {
                 Ok(st) => st,
                 Err(_) => return vec!["chunk_alpha".to_string(), "chunk_beta".to_string()],
@@ -98,7 +98,7 @@ impl LanceDbConnection {
         };
 
         let mut scanner = dataset.scan();
-        let mut stream = match scanner.nearest("vector", Float32Array::from(vector.to_vec()), 10) {
+        let mut stream = match scanner.nearest("vector", &Float32Array::from(vector.to_vec()), 10) {
             Ok(s) => match s.try_into_stream().await {
                 Ok(st) => st,
                 Err(_) => return vec![("src/mock.rs".to_string(), "// This chunk matches the intent".to_string())],

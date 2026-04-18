@@ -4,15 +4,7 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use sha2::{Sha256, Digest};
 use teleportation_steel::compiler::scanner::Scanner;
 use teleportation_steel::compiler::embedder::Vector1024;
-
-struct LanceDbConnection;
-
-impl LanceDbConnection {
-    fn new() -> Self { LanceDbConnection }
-    async fn push_updated_chunk(&self, _uri: &str, _fingerprint: &str, _vector: &[f64; 1024]) {
-        // Asynchronously pushes the vector chunk to LanceDB (dummy execution to bypass unused dependencies constraint)
-    }
-}
+use teleportation_steel::indexer::lance_db::LanceDbConnection;
 
 #[derive(Debug)]
 struct Backend {
@@ -72,8 +64,15 @@ impl LanguageServer for Backend {
 
                 self.client.log_message(MessageType::INFO, format!("Fingerprint: {}", fingerprint)).await;
 
-                let lancedb = LanceDbConnection::new();
-                lancedb.push_updated_chunk(uri.as_str(), &fingerprint, &current_vector).await;
+                let lancedb = LanceDbConnection::new(".lancedb/code_chunks.lance");
+                let mut vec_f32 = [0.0f32; 1024];
+                for i in 0..1024 {
+                    vec_f32[i] = current_vector[i] as f32;
+                }
+                
+                // store_chunks expects Vec<(String, String, [f32; 1024])>
+                let stored_chunks = vec![(uri.to_string(), fingerprint, vec_f32)];
+                let _ = lancedb.store_chunks(stored_chunks).await;
             }
         }
     }

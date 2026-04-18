@@ -73,23 +73,18 @@ async fn delta_handler(Json(payload): Json<DeltaRequest>) -> Json<DeltaResponse>
 }
 
 async fn retrieve_handler(Json(payload): Json<RetrieveRequest>) -> Json<RetrieveResponse> {
-    let scanner = Scanner::new();
-    let chunks = scanner.scan_directory(Path::new("."));
+    let lancedb = teleportation_steel::indexer::lance_db::LanceDbConnection::new(".lancedb/code_chunks.lance");
+    let results = lancedb.query_ast_blocks(&payload.target_vector.0).await;
     
     let mut matches = Vec::new();
     
-    for chunk in chunks {
-        let similarity = calculate_parity(payload.target_vector.0.as_ptr(), chunk.vector.as_ptr());
-        if similarity >= payload.threshold {
-            matches.push(ChunkMatch {
-                file_path: chunk.file_path,
-                content: chunk.content,
-                similarity,
-            });
-        }
+    for content in results {
+        matches.push(ChunkMatch {
+            file_path: "lancedb_match".to_string(), // Dummy assignment
+            content,
+            similarity: 1.0, // Dummy assignment
+        });
     }
-    
-    matches.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
     
     Json(RetrieveResponse { matches })
 }

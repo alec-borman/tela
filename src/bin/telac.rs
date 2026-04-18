@@ -319,20 +319,9 @@ mock_dir/
 
                 println!("{}", serde_json::to_string_pretty(&result).unwrap());
             } else if command == "retrieve" {
-                let scanner = Scanner::new();
-                let chunks = scanner.scan_directory(Path::new("."));
-                
-                let mut matches = Vec::new();
-                
-                for chunk in chunks {
-                    let similarity = calculate_parity(target_vector.0.as_ptr(), chunk.vector.as_ptr());
-                    if similarity > 0.85 {
-                        matches.push((similarity, chunk));
-                    }
-                }
-                
-                // Sort by similarity descending
-                matches.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+                let rt = tokio::runtime::Runtime::new().unwrap();
+                let lancedb = teleportation_steel::indexer::lance_db::LanceDbConnection::new(".lancedb/code_chunks.lance");
+                let matches = rt.block_on(lancedb.query_ast_blocks(&target_vector.0));
                 
                 println!("// Deterministic Intent Retrieval (DIR) Results");
                 println!("// Target: {}", domain.meta.name);
@@ -341,9 +330,8 @@ mock_dir/
                 if matches.is_empty() {
                     println!("// No chunks found matching the geometric intent.");
                 } else {
-                    for (sim, chunk) in matches {
-                        println!("// File: {} (Similarity: {:.4})", chunk.file_path, sim);
-                        println!("{}\n", chunk.content);
+                    for content in matches {
+                        println!("{}\n", content);
                     }
                 }
             } else if command == "delta" {

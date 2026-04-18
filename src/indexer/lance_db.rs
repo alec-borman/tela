@@ -85,8 +85,12 @@ impl LanceDbConnection {
 
     pub async fn retrieve_semantic_context(&self, intent: &str) -> Vec<(String, String)> {
         let mut vector = [0.0f32; 1024];
-        let hash = intent.bytes().fold(0usize, |acc, b| acc.wrapping_add(b as usize));
-        vector[hash % 1024] = 1.0;
+        let words: Vec<&str> = intent.split_whitespace().collect();
+        for word in words {
+            let hash = word.bytes().fold(0i32, |acc, b| acc.wrapping_mul(31).wrapping_add(b as i32));
+            let idx = hash.unsigned_abs() as usize % 1024;
+            vector[idx] = 1.0;
+        }
 
         let dataset = match Dataset::open(&self.uri).await {
             Ok(ds) => ds,

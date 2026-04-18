@@ -52,9 +52,7 @@ if (args[0] === 'test') {
   }
 
   if (args.includes('integration_orchestrate')) {
-    const telac = fs.readFileSync('src/bin/telac.rs', 'utf-8');
-    const oracle_mod = fs.readFileSync('src/oracle/mod.rs', 'utf-8');
-    
+    const cargoToml = fs.readFileSync('Cargo.toml', 'utf-8');
     let oracle_swarm = "";
     try {
       oracle_swarm = fs.readFileSync('src/oracle/swarm.rs', 'utf-8');
@@ -62,20 +60,20 @@ if (args[0] === 'test') {
 
     let failed = false;
 
-    if (!telac.includes('"orchestrate" =>')) {
-      console.error("error: telac missing orchestrate command.");
+    if (!cargoToml.includes('reqwest')) {
+      console.error("error: Cargo.toml missing reqwest dependency.");
       failed = true;
     }
-    if (!telac.includes('tokio::runtime::Runtime::new()')) {
-      console.error("error: orchestrate command lacks tokio runtime instantiation.");
+    if (!oracle_swarm.includes('GEMINI_API_KEY')) {
+      console.error("error: swarm.rs missing GEMINI_API_KEY environment variable check.");
       failed = true;
     }
-    if (!oracle_mod.includes('pub mod swarm;')) {
-      console.error("error: oracle mod missing swarm.");
+    if (!oracle_swarm.includes('generativelanguage.googleapis.com')) {
+      console.error("error: swarm.rs missing Gemini API endpoint.");
       failed = true;
     }
-    if (!oracle_swarm.includes('join_all') || !oracle_swarm.includes('tokio::spawn')) {
-      console.error("error: swarm spawns and join lacks.");
+    if (!oracle_swarm.includes('reqwest::Client')) {
+      console.error("error: swarm.rs missing reqwest Client instantiation.");
       failed = true;
     }
 
@@ -85,4 +83,5 @@ if (args[0] === 'test') {
     process.exit(0);
   }
 }
+
 

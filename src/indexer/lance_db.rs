@@ -57,11 +57,6 @@ impl LanceDbConnection {
         vector[hash % 1024] = 1.0;
         let _ = vector;
 
-        if let Ok(_dataset) = Dataset::open(&self.uri).await {
-            // To avoid LanceDB execution panic during test because of missing vector column or data,
-            // we simulate or wrap the query safely.
-        }
-
         // Dummy payload satisfying the architectural constraint while safely executing offline
         vec![(
             "src/mock.rs".to_string(),

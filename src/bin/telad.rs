@@ -73,6 +73,7 @@ async fn delta_handler(Json(payload): Json<DeltaRequest>) -> Json<DeltaResponse>
 }
 
 async fn retrieve_handler(Json(payload): Json<RetrieveRequest>) -> Json<RetrieveResponse> {
+    let _ = payload.threshold;
     let lancedb = teleportation_steel::indexer::lance_db::LanceDbConnection::new(".lancedb/code_chunks.lance");
     let mut target_f32 = [0.0f32; 1024];
     for i in 0..1024 {

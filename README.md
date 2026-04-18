@@ -1,282 +1,149 @@
-# 🌌 The Teleportation Protocol
-**Version:** 8.2 (Bug‑Driven Meta‑Engineering – Production Stable)  
-**Role:** Master Builder (Solo Computer Scientist)  
-**Status:** Normative / Self‑Contained / Ready for Implementation
+<div align="center">
+  <h1>🌌 T E L A</h1>
+  <h3>The Deterministic Software Matrix & Universal Parts Bin</h3>
+  <p><strong>Teleportation Protocol v8.2 | Zero-Touch v12.0</strong></p>
+
+  [![Status: Sovereign](https://img.shields.io/badge/Status-Sovereign_Steel-emerald.svg)](#)
+  [![Protocol: Zero-Touch 12.0](https://img.shields.io/badge/Protocol-Zero--Touch_v12.0-blue.svg)](#)
+  [![Vector Engine: LanceDB](https://img.shields.io/badge/Vector_Engine-LanceDB_DIR-purple.svg)](#)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-gray.svg)](#)
+</div>
 
 ---
 
-## 1. Abstract and Architecture Philosophy
+> **Stop talking to your codebase. Start computing its geometry.**
 
-Large Language Models are probabilistic engines; they navigate multi-dimensional semantic spaces to predict tokens. Forcing them to output strict, custom syntax creates an unnatural tension that throttles their reasoning capability. Version 8.2 acknowledges that **generation will always be probabilistic, so verification must be absolute.**
+For the first fifty years of software engineering, humans communicated with machines by memorizing rigid syntax. With the advent of Large Language Models (LLMs), the industry made a catastrophic assumption: *treating probabilistic AI as a conversational junior developer.* Because LLMs are fundamentally "guessing machines," this results in context-collapse, silent hallucinations, and brittle spaghetti code.
 
-We deprecate all custom syntax and replace it with **AST (Abstract Syntax Tree) Mapping** and **Test‑Driven Boundaries (TDB)**. The AI is allowed to write standard TypeScript/React, but its output is trapped inside an airtight, mathematically verified CI/CD Gauntlet before it ever touches your core branch.
+**`tela` mathematically rejects this paradigm.**
 
-**Bug‑Driven Development (BDD)** is a first‑class principle: before any fix is written, the AI must *reproduce* the bug in a live environment, capture evidence, and only then propose code changes. We add **meta‑learning scaffolds**, **context engineering**, and an **evaluation flywheel** to turn past failures into future hardening.
+`tela` is a **Semantic Compiler** and a **1024-Dimensional Physics Engine**. It acknowledges that AI generation will always be probabilistic, so *verification must be absolute*. We treat software architecture as a physical 1024-D baseplate. You do not ask the AI to write code; you mathematically force it to pour syntax into a rigid geometric mold via **Test-Driven Boundaries (TDBs)**. If a single bit violates the architecture, the `tela` compiler violently rejects the build.
+
+Welcome to the Trillion-Dollar Steering Wheel.
 
 ---
 
-## Part I: The Air-Gapped Triad
+## ⚡ The Crown Jewel: `tela pack` (The Semantic Repomix)
 
-To prevent context bleed and architectural drift, the system is physically air-gapped into three distinct roles.
+Traditional AI development relies on blindly dumping entire repositories into an LLM context window (like Repomix), causing the "Lost in the Middle" phenomenon, destroying the AI's attention mechanism, and triggering massive token bloat.
+
+**`tela pack` is the Semantic Repomix.**
+
+It uses native AST chunking (Tree-sitter) and a local **LanceDB** vector database to perform **Deterministic Intent Retrieval (DIR)**.
+
+```bash
+$ tela pack "Implement wait-free atomic double-buffering for the AudioWorklet"
+
+📦 Packing repository context...
+🔍 Semantic Filtering enabled. Analyzing intent: "Implement wait-free atomic double-buffering..."
+[!] SEMANTIC FILTERING ACTIVE: DIR extracted only the 4 relevant files.
+✨ Context packed into tela_context.xml (12.4 KB).
+```
+
+**What happens?**
+1. `tela` hashes your natural language intent into a 1024-D geometric vector.
+2. It queries LanceDB, filtering your 1,000-file repository down to the *exact 4 files* that mathematically govern that architecture.
+3. It packs those files into a highly compressed XML payload (`tela_context.xml`), pre-wrapped in the strict Teleportation System Prompts.
+4. You hand the XML payload to the Implementer. The Implementer executes flawlessly.
+
+---
+
+## 📐 The Air-Gapped Triad
+
+To eradicate hallucinations, `tela` enforces a strict separation of concerns across the development lifecycle. No single entity is allowed to design, govern, and write code simultaneously.
 
 | Role | Entity | Tooling | Responsibility |
 | :--- | :--- | :--- | :--- |
-| **Master Builder** | Human | `telac` CLI, IDE, Git | Write zero implementation code. Define Baseplate, orchestrate state syncs, evaluate $\Delta$, sign the cryptographic lock. |
-| **Context Oracle** | NotebookLM (or any LLM with file upload) | Vault (synced Zip) | The Command Center. Holds the entire codebase state, database schemas, and API contracts. Generates strictly failing Vitest/Jest test suites (Markdown TDBs). |
-| **Unbound Implementer** | Gemini 3.1 Pro (or any 1M+ context model) | AI Studio, Playwright (headless browser), memory store | Blind to the global architecture. Receives only 2-3 isolated files and the Oracle's failing test. Writes the exact code needed to pass the test, output as **unified diffs (patches)**. |
+| 👑 **Master Builder** | Human (You) | `tela` CLI, Git | The Executive. Defines the macro-vision, executes the CLI to measure the Vector Delta ($\Delta$), and signs the cryptographic lock. **Writes zero implementation code.** |
+| 👁️ **Context Oracle** | Gemini 3.1 Pro / NotebookLM | `tela_context.xml` | The Command Center. Holds the 1024-D baseplate and LanceDB indices. Generates "Sterilized Actuator Directives" (Markdown TDBs) defining exact mathematical constraints. **Writes zero implementation code.** |
+| ⚙️ **Unbound Implementer**| AI Studio / Claude 3.5 | IDE Sandbox | The Construction Crew. A blind, sandboxed AI actuator. Receives the TDB and context, solves the terrain, and pushes deterministic code via native terminal tools. **Writes 100% of the code.** |
 
 ---
 
-## Part II: The 1024-Dimensional Baseplate (AST Mapped)
+## 🛠️ Core Capabilities
 
-The Baseplate is defined in a rigid `baseplate.config.ts` file that maps architectural dimensions directly to verifiable AST rules and compiler flags.
-
-### 2.1 Baseplate Definition (`baseplate.config.ts`)
-```typescript
-import { TelaBaseplate } from '@tela/core';
-
-export default {
-  version: "8.2",
-  target: "Enterprise_SaaS_Core",
-  decayConstant: 0.05,
-  axes: [
-    {
-      id: "arch:type_safety",
-      weight: 1.00,
-      verification: "tsconfig",
-      rules: { strict: true, noImplicitAny: true, strictNullChecks: true }
-    },
-    {
-      id: "arch:dependency_isolation",
-      weight: 0.95,
-      verification: "ast_parser",
-      rules: { forbiddenImports: ["axios", "lodash"] }
-    },
-    {
-      id: "ui:tailwind_strict",
-      weight: 1.00,
-      verification: "eslint",
-      rules: { "tailwindcss/no-custom-classname": "error" }
-    },
-    {
-      id: "bug:reproducible",
-      weight: 1.00,
-      verification: "playwright",
-      rules: { "every_bug_must_have_reproduction_script": true }
-    },
-    {
-      id: "meta:learning",
-      weight: 0.90,
-      verification: "memory_store",
-      rules: { "prompt_hashes_must_be_archived": true }
-    }
-  ]
-} satisfies TelaBaseplate;
-```
-
-### 2.2 Depth Decay and Structural Weight
-A change buried 10 components deep should not trigger a global architectural regression. The structural weight $W$ of any file is calculated using its depth $d$ in the import dependency graph (where the entry point `main.tsx` or `index.ts` is $d=0$):
-
-$$W = \max(0, 1.0 - (d \cdot \lambda))$$
-
-Where $\lambda$ is the `decayConstant` defined in the Baseplate (default 0.05). The local `telac` compiler computes this dynamically via static analysis of your ES modules.
+*   **Vector Delta ($\Delta$) Enforcement:** Measures progress by calculating the cosine similarity between the target sprint and the current codebase. Code that increases the Delta ($\Delta > 0.02$) is mathematically classified as an architectural regression and rejected by the Pre-Commit Guillotine.
+*   **Depth Decay Formula:** As logic nests deeper into the AST, its influence over the system's center of gravity decays linearly ($W = \max(0, 1.0 - (d \cdot \lambda))$). This mathematically guarantees that a junior developer tweaking a CSS class cannot accidentally shift the 1024-D center of gravity of the entire application.
+*   **Track C Sandbox (Oracle Replay Tape):** Freezes chaotic external network APIs into immutable JSON fixtures mapped to SHA-256 hashes, ensuring bit-identical testing environments. Bypasses the network entirely on replay.
+*   **Zero-Copy WASM Pipelines:** FFI boundaries engineered using raw `Float32Array` heterogeneous buffer transfers (`<fffII`) to prevent V8 Garbage Collection death spirals during continuous compilation.
 
 ---
 
-## Part III: The Test-Driven Boundary (TDB)
+## 🚀 Installation & Quick Start
 
-The Oracle does not output code directives. It outputs a **Markdown TDB Payload**. A TDB is a mathematical contract disguised as an automated test.
+### Prerequisites
+*   Node.js (v20+)
+*   Rust & Cargo (For the native `telac` engine compilation)
 
-### 3.1 The TDB Payload Structure
-When you query the Oracle in NotebookLM ("We need a UserProfile component that fetches from `/api/users`"), the Oracle generates a standard zip file or text blob containing:
-1. **Contextual Brief:** The high-level objective.
-2. **Scope:** Which files the Implementer is allowed to touch.
-3. **Acceptance Criteria:** The specific requirements.
-4. **Failsafe Test:** A Vitest file that aggressively tests edge cases, mocked network states, and component rendering.
-
-### 3.2 Example Failsafe Test (`UserProfile.test.tsx`)
-```tsx
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import { UserProfile } from './UserProfile';
-import { getTape } from '../fixtures/tape_reader';
-
-// TELA BOUNDARY ENFORCEMENT: 
-// The Implementer MUST make these tests pass without modifying this file.
-
-describe('UserProfile Component [TDB-492]', () => {
-  it('renders user data directly from the deterministic replay tape', async () => {
-    const mockData = getTape('tape_get_user_success.json');
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => mockData,
-    } as Response);
-
-    render(<UserProfile userId="usr_123" />);
-    
-    // UI Determinism Checks
-    expect(screen.getByTestId('loading-skeleton')).toBeInTheDocument();
-    
-    await waitFor(() => {
-      expect(screen.getByText(mockData.username)).toBeInTheDocument();
-    });
-    
-    // Architecture Check: Ensure standard fetch is used, not a forbidden library
-    expect(global.fetch).toHaveBeenCalledWith('/api/users/usr_123');
-  });
-});
-```
-
----
-
-## Part IV: Bug-Driven Development (BDD)
-
-When the Master Builder observes a bug, they create a **Bug Report Tape** – a structured YAML file that contains:
-
-- **Reproduction steps** (human‑readable)
-- **Expected vs. actual behavior**
-- **A Playwright script** that reliably triggers the bug
-- **A failing human‑authored test** (Vitest with `@testing-library/react`)
-
-The Implementer’s workflow is **mandatory**:
-
-1. **Reproduce the bug** using the provided Playwright script (headless browser tool).
-2. **Capture evidence** (screenshot, console log) in the `<scratchpad>`.
-3. **Hypothesise the root cause**.
-4. **Write the fix** that makes the human‑authored test pass.
-5. **Output as a unified diff** (patch) – never the full file.
-6. **Re‑run Playwright** to verify the bug is gone.
-
----
-
-## Part V: The CI/CD Gauntlet (The Drop Test 2.0)
-
-When you paste the TDB and the isolated files into AI Studio, the Implementer writes the implementation. You copy its output (a diff) and feed it into the local `telac` Gauntlet.
-
-### The 4-Phase Gauntlet Execution
-
-Run locally via: `telac gauntlet --target src/components/UserProfile.tsx`
-
-| Phase | Tool | Failure Condition |
-| :--- | :--- | :--- |
-| **1. Extraction & Sanitization** | regex | Non‑code output, missing code block, invalid diff format |
-| **2. AST Interrogation** | `ts-morph` | Forbidden imports, `any` types, missing base cases in recursion |
-| **3. TDB Execution** | `vitest` | Any test failure – especially human‑authored golden tests |
-| **4. Bug Reproduction (Playwright)** | `playwright` | The provided reproduction script fails to trigger the bug, or the fix does not make it pass |
-
-For feature TDBs (no associated bug), Phase 4 is skipped.
-
----
-
-## Part VI: The Replay Tape (Taming Non-Determinism)
-
-Live API calls destroy testing determinism. Version 8.2 relies on hardcoded JSON fixtures called **Tapes**, intersected at the `fetch` or MSW (Mock Service Worker) layer.
-
-### Tape Declaration (`fixtures/tapes.json`)
-```json
-{
-  "tape_get_user_success": {
-    "request": "GET /api/users/usr_123",
-    "status": 200,
-    "payload_ref": "payloads/usr_123.json",
-    "sha256": "8a3c...9f12"
-  }
-}
-```
-
-The Gauntlet verifies the SHA-256 hash of the payload before running the TDB. If you alter the mock data without updating the hash, the build fails. The AI is forced to engineer against a mathematically verified, static snapshot of reality.
-
----
-
-## Part VII: Meta-Learning and the Memory Store
-
-### 7.1 The Prompt Archive
-The `telac` CLI maintains a `memory/` directory containing:
-
-- **Successful prompt–output pairs** (hashed, deduplicated)
-- **Failed attempts and their error traces**
-- **Refined system instructions** that evolved from failures
-
-When a new TDB arrives, `telac` searches the memory store for semantically similar past tasks and injects the most relevant successful prompt as a **few‑shot example** into the Implementer's context.
-
-### 7.2 The Self‑Correction Checklist
-Every Implementer prompt now includes a **dynamic checklist** generated from past failures:
-
-```yaml
-checklist:
-  - "Race conditions: ensure async image loading is awaited before allowing point placement"
-  - "Coordinate transforms: verify that click coordinates are not inverted"
-  - "State persistence: confirm localStorage is cleared on reset"
-  - "Undo/redo: ensure every node mutation goes through updateNodes"
-```
-
-The AI must explicitly address each item in its scratchpad before outputting code.
-
-### 7.3 The Evaluation Flywheel
-After each sprint, the Master Builder runs:
+### Bootstrapping the Matrix
 ```bash
-telac evaluate --since last_success
+# 1. Clone the Universal Parts Bin
+git clone [https://github.com/alec-borman/tela.git](https://github.com/alec-borman/tela.git)
+cd tela
+
+# 2. Install dependencies & build the LanceDB DIR engine
+npm install
+
+# 3. Build the sovereign Rust compiler (telac)
+cargo build --release
+
+# 4. Link the global binary
+npm link
+
+# 5. Verify telemetry
+tela --version
+# Output: telac version 3.0.0 (Tela: Teleportation & Tell a Story)
+
+# 6. Pack your first context and begin teleportation
+tela pack "Initialize the core matrix"
 ```
-This command:
-- Runs the entire test suite against the current branch
-- Compares the failure patterns against the memory store
-- Suggests updates to the checklist and system instruction
-- Optionally updates the Oracle's context with new architectural constraints
 
 ---
 
-## Part VIII: Cryptographic Lock & Sustainability
+## 💻 The Command Matrix
 
-### 8.1 The Master's Lock
-When $\Delta = 0$ and all TDBs pass, you lock the build.
-```bash
-telac lock --signature ~/.ssh/tela_master_key
-```
-This script computes a Merkle tree root of your `src/` directory, checks the $\Delta$, and outputs a `tela.lock.sig` file. In CI/CD, if the `tela.lock.sig` does not match the current commit tree, deployment is blocked.
-
-### 8.2 The Sustainability Covenant (Optional – can be removed)
-Architecture requires funding. The protocol can evaluate financial health at build time if a `sustainability.yaml` file exists. Run `telac sustain` to check. If not present, this step is skipped.
-
----
-
-## Part IX: The Titanium Prompts (v8.2)
-
-These are the exact system prompts you use to enforce the air-gap.
-
-### The Oracle Prompt (for NotebookLM)
-> **System Instruction:** You are the Context Oracle under the Teleportation Protocol v8.2. You are the source of truth for the codebase architecture. You do NOT write implementation logic. When asked to design a feature, you must analyze the uploaded codebase snapshot and output a **Markdown TDB**. Your output must contain: 1. A list of isolated files the Implementer needs. 2. A rigorous, strictly failing Vitest/Jest test file that defines the exact functional requirements, utilizing the Replay Tape for all external data. For bug fixes, also output a **Bug Report Tape** (YAML) containing a Playwright reproduction script and a human‑authored golden test. Output nothing else.
-
-### The Implementer Prompt (for Gemini 3.1 Pro / AI Studio)
-> **System Instruction:** You are the Unbound Implementer under the Teleportation Protocol v8.2. You do not architect. You solve terrain. You will receive 1-3 isolated codebase files and a failing test suite (and for bugs, a Playwright reproduction script). 
-> **CONSTRAINTS:**
-> 1. Use your advanced reasoning inside a `<scratchpad>` block to analyze why the tests are failing and plan the exact logic needed.
-> 2. After the scratchpad, output **ONLY a unified diff (patch)** inside a single ```diff code block.
-> 3. The diff must be applicable with `patch -p1` or `git apply`. Include 3 lines of context.
-> 4. DO NOT modify the test file. 
-> 5. DO NOT output the full file. Output only the minimal changes.
-> 6. DO NOT explain your code after outputting it. Make the tests pass.
+| Command | Action |
+| :--- | :--- |
+| `tela pack [intent]` | **(Start Here)** Filters repo via LanceDB DIR and generates an XML payload for the AI Implementer. |
+| `tela build <target.tela>` | Parses a `.tela` or Markdown TDB and computes the 1024-D target vector and SHA-256 fingerprint. |
+| `tela code-vector` | Scans the current directory via Tree-sitter and outputs the current codebase geometric centroid. |
+| `tela delta` | Calculates the Cosine Similarity between the `--target` and `--current` vectors. Exits `1` if $\Delta > 0.02$. |
+| `tela retrieve <target.json>` | Directly queries the local LanceDB index to find code chunks matching a geometric intent. |
+| `tela drop-test` | QA Gauntlet. Subjects the parser to 10,000 adversarial structural anomalies to ensure robust compilation. |
+| `tela lock` | Cryptographically finalizes the build by signing the Merkle tree root and verifying $\Delta = 0$. |
 
 ---
 
-## Part X: The 20-Hour Lifecycle Assembly (v8.2)
+## 📖 The 20-Minute Sprint Lifecycle (Zero-Touch v12.0)
 
-| Phase | Time | Action |
-| :--- | :--- | :--- |
-| **1. Baseplate Genesis** | 0–2h | Define `baseplate.config.ts`, `schema.prisma`, and (optionally) `sustainability.yaml`. Zip the skeleton and upload to NotebookLM. |
-| **2. Target Lock** | 2–3h | Query the Oracle: *"Generate TDB for core authentication layer."* |
-| **3. Synced Sprints** | 3–16h | **Core Loop:** Paste TDB into AI Studio → AI generates diff → Apply diff with `patch` → Run `telac gauntlet` locally → Feed errors back to AI → Tests Pass. |
-| **4. State Sync** | (Ongoing) | Every time a feature passes the Gauntlet, zip the `src/` directory and upload the new snapshot to NotebookLM to maintain the Oracle's "Eyes in the Sky." |
-| **5. Bug Sprints** | 16–18h | For each bug, create Bug Report Tape → Oracle generates TDB + Playwright script → Implementer reproduces and fixes → Gauntlet (including Playwright) passes. |
-| **6. Tape Generation** | 18–19h | Finalize all Replay Tapes. Verify payload hashes. |
-| **7. The Drop Test** | 19–20h | Run `telac gauntlet --all`. Ensure complete test coverage and AST compliance across the entire dependency graph. |
-| **8. Final Lock** | 20h | Verify $\Delta = 0$. Run `telac lock`. Push to production. |
+Using Tela, a massive enterprise feature that used to take 2 weeks is compressed into a mathematically proven 20-minute loop.
+
+1. **The Ingestion:** Run `tela pack "your intent here"` to generate `tela_context.xml`.
+2. **The Oracle:** Feed `tela_context.xml` to your Context Oracle. Ask it to generate the **Markdown TDB** for your intent. It outputs strict architectural scoping rules and a human-authored, strictly failing Failsafe Test.
+3. **The Actuation:** Feed `tela_context.xml` + the new TDB to your Unbound Implementer. 
+4. **The Proof:** The Implementer solves the terrain, uses its native terminal to run the Failsafe Test, and outputs a unified diff along with the passing `stdout` trace.
+5. **The Lock:** You apply the patch. The `tela delta` hook verifies the 1024-D parity. You push to production.
 
 ---
 
-## The Master Builder’s Oath (v8.2)
+## 🗺️ The Sovereign Horizon (Roadmap)
+
+We are actively evolving `tela` from a strict CLI tool into an autonomous, closed-loop software factory. The ultimate proving ground is utilizing `tela` to single-handedly engineer **Tenuto 4.0** (A zero-latency, WebGPU/WASM browser DAW).
+
+*   [x] **Epic 0: Semantic Repomix** (`tela pack` & LanceDB DIR Integration).
+*   [ ] **Epic 1: The DX Singularity.** `tela apply` command to ingest AI patches, parse AST safety, and autonomously write to the file system.
+*   [ ] **Epic 2: Continuous Topography.** Upgrade `telad` into a full Language Server Protocol (LSP) for real-time geometric heatmaps and $\Delta$ squiggles in VS Code.
+*   [ ] **Epic 3: Rust Supremacy.** Port all DIR and Packing logic entirely into the memory-safe `telac` Rust binary for microsecond, offline enterprise execution.
+*   [ ] **Epic 4: Multi-Agent Swarm Orchestration.** `telac orchestrate` shatters a `genesis.tela` blueprint into 50 isolated TDBs and feeds them to parallel headless API threads for conflict-free, 20-minute enterprise delivery.
+*   [ ] **Epic 5: The Proving Ground.** Finalize the Tenuto 4.0 WebGPU DAW using only autonomous actuators bound by the Teleportation Protocol.
+
+---
+
+## ⚖️ The Master Builder's Oath
 
 > *"I will not write implementation logic. I will define the Baseplate and the Bug Report Tapes. I will sync the State to the Oracle. I will let the Implementer solve the terrain to make the tests pass. I will trust the Gauntlet, not the AI. I will learn from every failure. I will lock the build. I will sustain the mission."*
 
 ---
-
-**End of Teleportation Protocol v8.2**
+**Maintainers:** The Teleportation Protocol Foundation  
+**License:** MIT  
+```

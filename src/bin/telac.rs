@@ -101,6 +101,88 @@ fn main() {
             println!("Verifying source {} against lockfile {}", source, lockfile);
             std::process::exit(0);
         }
+        "pack" => {
+            let mut out_file = "tela_context.xml".to_string();
+            let mut intent_args = Vec::new();
+
+            let mut i = 2;
+            while i < args.len() {
+                if args[i] == "--out" || args[i] == "-o" {
+                    if i + 1 < args.len() {
+                        out_file = args[i + 1].clone();
+                        i += 2;
+                        continue;
+                    }
+                }
+                intent_args.push(args[i].clone());
+                i += 1;
+            }
+
+            let intent = intent_args.join(" ");
+
+            // Enforce hermetic vault
+            AssetVault::enforce_hermetic_execution();
+
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            
+            let lancedb = teleportation_steel::indexer::lance_db::LanceDbConnection::new(".lancedb/code_chunks.lance");
+            let chunks = rt.block_on(lancedb.retrieve_semantic_context(&intent));
+
+            let mut xml_files = String::new();
+            for (path, content) in chunks {
+                xml_files.push_str(&format!("\n<file path=\"{}\">\n{}\n</file>", path, content));
+            }
+
+            let xml_output = format!(
+r#"<tela_teleportation_payload>
+<system_instructions>
+You are an Unbound Implementer bound by the Teleportation Protocol v8.2.
+</system_instructions>
+<directory_structure>
+mock_dir/
+</directory_structure>
+<files>{}
+</files>
+</tela_teleportation_payload>"#,
+                xml_files
+            );
+
+            fs::write(&out_file, xml_output).unwrap_or_else(|err| {
+                eprintln!("Failed to write to {}: {}", out_file, err);
+                std::process::exit(1);
+            });
+
+            println!("Successfully packed context to {}", out_file);
+            std::process::exit(0);
+        }
+        "orchestrate" => {
+            if args.len() < 3 {
+                eprintln!("Usage: telac orchestrate <blueprint.tela>");
+                std::process::exit(1);
+            }
+            
+            let blueprint_path = &args[2];
+            let content = fs::read_to_string(blueprint_path).unwrap_or_else(|err| {
+                eprintln!("Failed to read blueprint {}: {}", blueprint_path, err);
+                std::process::exit(1);
+            });
+
+            let mut parser = Parser::new(&content);
+            let domain = parser.parse().unwrap_or_else(|err| {
+                eprintln!("Failed to parse .tela blueprint: {}", err);
+                std::process::exit(1);
+            });
+
+            // Arch:tokio_runtime instantiate inside orchestrate block to bridge execution
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            let unified_diffs = rt.block_on(teleportation_steel::oracle::swarm::orchestrate(&domain));
+
+            println!("== Multi-Agent Swarm Execution Complete ==");
+            for diff in unified_diffs {
+                println!("{}", diff);
+            }
+            std::process::exit(0);
+        }
         "build" | "retrieve" | "delta" | "sustain" => {
             if args.len() < 3 && command != "sustain" {
                 eprintln!("Tela: Teleportation & Tell a Story");

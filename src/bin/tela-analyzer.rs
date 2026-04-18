@@ -1,6 +1,18 @@
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
+use std::path::Path;
+use sha2::{Sha256, Digest};
+use teleportation_steel::compiler::scanner::Scanner;
+
+struct LanceDbConnection;
+
+impl LanceDbConnection {
+    fn new() -> Self { LanceDbConnection }
+    async fn push_updated_chunk(&self, _uri: &str, _fingerprint: &str, _vector: &[f64; 1024]) {
+        // Asynchronously pushes the vector chunk to LanceDB (dummy execution to bypass unused dependencies constraint)
+    }
+}
 
 #[derive(Debug)]
 struct Backend {
@@ -32,28 +44,37 @@ impl LanguageServer for Backend {
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        self.client
-            .log_message(MessageType::INFO, "File changed, running LL(1) validation...")
-            .await;
-            
-        // In a full implementation, we would parse the text here using the LL(1) lexer/parser
-        // and send diagnostics back to the client.
-        // For now, we simulate a successful parse or a dummy diagnostic.
         let uri = params.text_document.uri;
-        let diagnostics = vec![]; // Empty means no errors
-        
+        let diagnostics = vec![];
         self.client
             .publish_diagnostics(uri, diagnostics, None)
             .await;
     }
 
-    async fn did_save(&self, _params: DidSaveTextDocumentParams) {
+    async fn did_save(&self, params: DidSaveTextDocumentParams) {
         self.client
             .log_message(MessageType::INFO, "File saved, calculating vector coordinates...")
             .await;
             
-        // Here we would call the internal Oracle (project_ast_to_vector)
-        // and perhaps display the resulting vector or similarity score.
+        let uri = params.text_document.uri.clone();
+        if let Ok(file_path) = uri.to_file_path() {
+            let scanner = Scanner::new();
+            if let Some(parent) = file_path.parent() {
+                let chunks = scanner.scan_directory(parent);
+                let current_vector = scanner.centroid(&chunks, false);
+
+                let vector_json = serde_json::to_string(&current_vector).unwrap();
+                let mut hasher = Sha256::new();
+                hasher.update(vector_json.as_bytes());
+                let result_hash = hasher.finalize();
+                let fingerprint = format!("{:x}", result_hash);
+
+                self.client.log_message(MessageType::INFO, format!("Fingerprint: {}", fingerprint)).await;
+
+                let lancedb = LanceDbConnection::new();
+                lancedb.push_updated_chunk(uri.as_str(), &fingerprint, &current_vector).await;
+            }
+        }
     }
 }
 

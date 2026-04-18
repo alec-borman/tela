@@ -10,6 +10,7 @@ use teleportation_steel::compiler::embedder::{project_domain_to_vector, Embeddin
 use teleportation_steel::compiler::delta::calculate_parity;
 use teleportation_steel::compiler::scanner::Scanner;
 use sha2::{Sha256, Digest};
+use std::process::{Command, Stdio};
 
 #[derive(Deserialize)]
 struct ProjectRequest {
@@ -119,6 +120,26 @@ async fn status_handler() -> Json<StatusResponse> {
 
 #[tokio::main]
 async fn main() {
+    // Spawn tela-analyzer as a background child process
+    let mut exe_path = std::env::current_exe().unwrap_or_else(|_| "telad".into());
+    exe_path.set_file_name("tela-analyzer");
+
+    let _analyzer_process = Command::new(&exe_path)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .or_else(|_| {
+            // Fallback to cargo run if current_exe manipulation fails
+            Command::new("cargo")
+                .arg("run")
+                .arg("--bin")
+                .arg("tela-analyzer")
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .spawn()
+        })
+        .expect("Failed to start tela-analyzer LSP as a background process");
+
     // Build our application with a route
     let app = Router::new()
         .route("/project", post(project_handler))

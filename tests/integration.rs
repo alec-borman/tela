@@ -1,4 +1,3 @@
-use teleportation_steel::parser::lexer::Lexer;
 use teleportation_steel::parser::parser::Parser;
 use teleportation_steel::compiler::embedder::project_domain_to_vector;
 use teleportation_steel::compiler::delta::calculate_parity;
@@ -30,9 +29,8 @@ fn test_end_to_end_parity() {
         }
     "#;
 
-    let mut lexer = Lexer::new(tela_content);
-    let tokens = lexer.tokenize().unwrap();
-    let mut parser = Parser::new(tokens);
+    // Directly instantiate Parser via &'a str, removing Lexer array mismatch
+    let mut parser = Parser::new(tela_content);
     let domain = parser.parse().unwrap();
     
     let target_vector = project_domain_to_vector(&domain);

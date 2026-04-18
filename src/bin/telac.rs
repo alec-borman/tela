@@ -321,7 +321,11 @@ mock_dir/
             } else if command == "retrieve" {
                 let rt = tokio::runtime::Runtime::new().unwrap();
                 let lancedb = teleportation_steel::indexer::lance_db::LanceDbConnection::new(".lancedb/code_chunks.lance");
-                let matches = rt.block_on(lancedb.query_ast_blocks(&target_vector.0));
+                let mut target_f32 = [0.0f32; 1024];
+                for i in 0..1024 {
+                    target_f32[i] = target_vector.0[i] as f32;
+                }
+                let matches = rt.block_on(lancedb.query_ast_blocks(&target_f32));
                 
                 println!("// Deterministic Intent Retrieval (DIR) Results");
                 println!("// Target: {}", domain.meta.name);

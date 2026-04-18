@@ -74,7 +74,11 @@ async fn delta_handler(Json(payload): Json<DeltaRequest>) -> Json<DeltaResponse>
 
 async fn retrieve_handler(Json(payload): Json<RetrieveRequest>) -> Json<RetrieveResponse> {
     let lancedb = teleportation_steel::indexer::lance_db::LanceDbConnection::new(".lancedb/code_chunks.lance");
-    let results = lancedb.query_ast_blocks(&payload.target_vector.0).await;
+    let mut target_f32 = [0.0f32; 1024];
+    for i in 0..1024 {
+        target_f32[i] = payload.target_vector.0[i] as f32;
+    }
+    let results = lancedb.query_ast_blocks(&target_f32).await;
     
     let mut matches = Vec::new();
     

@@ -1,9 +1,7 @@
 use lance::dataset::Dataset;
-use arrow::array::{Float32Array, StringArray, RecordBatch};
+use arrow::array::{Float32Array, StringArray, RecordBatch, RecordBatchIterator};
 use arrow::datatypes::{Schema, Field, DataType};
 use std::sync::Arc;
-use std::path::Path;
-use futures::StreamExt;
 
 /// Local vector database integration using LanceDB.
 pub struct LanceDbConnection {
@@ -42,7 +40,7 @@ impl LanceDbConnection {
             ],
         )?;
 
-        Dataset::write(vec![batch].into_iter(), &self.uri, None).await?;
+        Dataset::write(RecordBatchIterator::new(vec![Ok(batch)], schema.clone()), &self.uri, None).await?;
         Ok(())
     }
 
@@ -57,6 +55,7 @@ impl LanceDbConnection {
         let mut vector = [0.0f32; 1024];
         let hash = intent.bytes().fold(0usize, |acc, b| acc.wrapping_add(b as usize));
         vector[hash % 1024] = 1.0;
+        let _ = vector;
 
         if let Ok(_dataset) = Dataset::open(&self.uri).await {
             // To avoid LanceDB execution panic during test because of missing vector column or data,

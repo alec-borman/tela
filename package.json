@@ -4,6 +4,9 @@
   "version": "3.0.0",
   "description": "The Universal Parts Bin for the Teleportation Protocol. Build deterministic software like interlocking bricks on a 1024-dimensional baseplate.",
   "type": "module",
+  "bin": {
+    "tela": "src/bin/check.ts"
+  },
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",

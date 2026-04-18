@@ -35,16 +35,16 @@ jobs:
           # Ensure telac is in PATH or call it directly
           TELAC=../tela-toolchain/target/release/telac
           
-          # Replace 'sprint_target.tela' with the actual target file in the repo
-          TARGET_FILE="sprint_target.tela"
+          # Get current codebase vector unconditionally
+          $TELAC code-vector . > code_vector.json
+          
+          # Replace 'sprint_target.md' with the actual target file in the repo
+          TARGET_FILE="sprint_target.md"
           
           if [ ! -f "$TARGET_FILE" ]; then
             echo "Target file $TARGET_FILE not found. Skipping delta computation."
             exit 0
           fi
-
-          # Get current codebase vector
-          $TELAC code-vector . > code_vector.json
           
           # Get target blueprint vector
           $TELAC build $TARGET_FILE > target_vector.json
@@ -57,8 +57,13 @@ jobs:
           import json
           import math
           import sys
+          import os
 
           try:
+              if not os.path.exists("target_vector.json"):
+                  print("target_vector.json not found. Skipping similarity calculation.")
+                  sys.exit(0)
+
               with open("code_vector.json", "r") as f:
                   code_data = json.load(f)
               with open("target_vector.json", "r") as f:

@@ -1,5 +1,7 @@
+#!/usr/bin/env tsx
 import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { Lexer, GrammarViolationError } from '../parser/lexer';
 import { Parser } from '../parser/parser';
 import { projectDomainToVector, calculateParity, computeFingerprint } from '../compiler/vector';
@@ -16,7 +18,7 @@ async function main() {
   if (args.length < 1) {
     console.error('Tela: Teleportation & Tell a Story');
     console.error('Usage: tsx src/bin/check.ts <command> [path-or-file]');
-    console.error('Commands: build, retrieve, delta, code-vector, sustain, drop-test, teleport, lock, verify');
+    console.error('Commands: build, retrieve, delta, code-vector, sustain, drop-test, teleport, lock, verify, pack, apply');
     process.exit(1);
   }
 
@@ -27,7 +29,7 @@ async function main() {
     case '-h':
       console.log('Tela: Teleportation & Tell a Story');
       console.log('Usage: tsx src/bin/check.ts <command> [path-or-file]');
-      console.log('Commands: build, retrieve, delta, code-vector, sustain, drop-test, teleport, lock, verify');
+      console.log('Commands: build, retrieve, delta, code-vector, sustain, drop-test, teleport, lock, verify, pack, apply');
       process.exit(0);
       break;
     case '--version':
@@ -271,6 +273,119 @@ async function main() {
       } else {
         console.error('// Status: ARCHITECTURAL REGRESSION');
         process.exit(1);
+      }
+      break;
+    }
+    case 'pack': {
+      let outPath = 'tela_context.xml';
+      const intentWords: string[] = [];
+      for (let i = 1; i < args.length; i++) {
+        if ((args[i] === '--out' || args[i] === '-o') && i + 1 < args.length) {
+          outPath = args[i + 1];
+          i++;
+        } else if (!args[i].startsWith('-')) {
+          intentWords.push(args[i]);
+        }
+      }
+
+      const intent = intentWords.join(' ');
+      const filePathsToPack = new Set<string>();
+
+      if (intent) {
+        const targetVector = new Float64Array(1024);
+        const words = intent.split(/\s+/);
+        for (const word of words) {
+          if (!word) continue;
+          let hash = 0;
+          for (let i = 0; i < word.length; i++) {
+            hash = (Math.imul(31, hash) + word.charCodeAt(i)) | 0;
+          }
+          const index = Math.abs(hash) % 1024;
+          targetVector[index] += 1;
+        }
+
+        const { DIREngine } = await import('../indexer/dir');
+        const engine = new DIREngine();
+        await engine.indexDirectory(process.cwd());
+        const results = await engine.retrieve(targetVector, 0.0, 15);
+        for (const result of results) {
+          filePathsToPack.add(result.filePath);
+        }
+      }
+
+      if (!intent || filePathsToPack.size === 0) {
+        const scanner = new Scanner(process.cwd());
+        const chunks = scanner.scanDirectory();
+        for (const chunk of chunks) {
+          filePathsToPack.add(chunk.filePath);
+        }
+      }
+
+      let xmlOutput = `<tela_teleportation_payload>\n<system_instructions>You are an Unbound Implementer bound by the Teleportation Protocol v8.2.\nYou do not architect. You solve terrain to match the provided context and intent.\nOutput ONLY a unified diff (patch) inside a \`\`\`diff code block. Make the tests pass.</system_instructions>\n\n<directory_structure>\n`;
+
+      const sortedPaths = Array.from(filePathsToPack).sort();
+      xmlOutput += sortedPaths.join('\n');
+      xmlOutput += `\n</directory_structure>\n\n<files>\n`;
+
+      for (const filePath of sortedPaths) {
+        let content = '';
+        try {
+          content = fs.readFileSync(filePath, 'utf-8');
+        } catch {
+          continue;
+        }
+        xmlOutput += `<file path="${filePath}">\n<![CDATA[\n${content}\n]]>\n</file>\n`;
+      }
+      
+      xmlOutput += `</files>\n</tela_teleportation_payload>`;
+      fs.writeFileSync(outPath, xmlOutput, 'utf-8');
+      console.log(`Successfully packed context into ${outPath}`);
+      break;
+    }
+    case 'apply': {
+      const patchFile = args[1];
+      let targetPath = '';
+      for (let i = 2; i < args.length; i++) {
+        if (args[i] === '--target' && i + 1 < args.length) {
+          targetPath = args[i + 1];
+          i++;
+        }
+      }
+
+      if (!patchFile || !targetPath) {
+        console.error('Usage: tsx src/bin/check.ts apply <patch-file> --target <target-vector.json>');
+        process.exit(1);
+      }
+
+      try {
+        execSync(`patch -p1 < ${patchFile}`);
+      } catch (err) {
+        console.error('Failed to apply patch initially.', err);
+        process.exit(1);
+      }
+
+      const targetData = JSON.parse(fs.readFileSync(targetPath, 'utf-8'));
+      const targetVector = new Float64Array(targetData.vector);
+
+      const scanner = new Scanner(process.cwd());
+      const chunks = scanner.scanDirectory();
+      const currentVector = scanner.aggregateVectors(chunks);
+
+      const similarity = calculateParity(targetVector, currentVector);
+      const delta = 1 - similarity;
+
+      // The vector calculated ensures that the implementation logic matches the target architecture.
+      if (delta > 0.02) {
+        try {
+          execSync(`patch -R -p1 < ${patchFile}`);
+        } catch (err) {
+          console.error('Failed to revert patch safely.', err);
+        }
+        console.log('ARCHITECTURAL REGRESSION: Patch reverted.');
+        process.exit(1);
+      } else {
+        console.log('PARITY ACHIEVED: Patch applied.');
+        process.exit(0);
       }
       break;
     }

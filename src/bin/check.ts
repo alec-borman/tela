@@ -381,10 +381,10 @@ async function main() {
         } catch (err) {
           console.error('Failed to revert patch safely.', err);
         }
-        console.log('ARCHITECTURAL REGRESSION: Patch reverted.');
+        console.log('ARCHITECTURAL REGRESSION: Patch reverted');
         process.exit(1);
       } else {
-        console.log('PARITY ACHIEVED: Patch applied.');
+        console.log('PARITY ACHIEVED: Patch applied');
         process.exit(0);
       }
       break;

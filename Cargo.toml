@@ -30,7 +30,7 @@ tower-lsp = "0.20"
 # tree-sitter-typescript = "0.22"
 lance = "0.10"
 arrow = "51"
-chrono = "=0.4.43"
+chrono = "=0.4.39"
 futures = "0.3"
 hex = "0.4"
 reqwest = { version = "0.11", features = ["json", "rustls-tls"] }

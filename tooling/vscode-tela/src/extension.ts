@@ -21,7 +21,11 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: 'file', language: 'tela' }],
+    documentSelector: [
+      { scheme: 'file', language: 'tela' },
+      { scheme: 'file', language: 'typescript' },
+      { scheme: 'file', language: 'rust' }
+    ],
     synchronize: {
       fileEvents: vscode.workspace.createFileSystemWatcher('**/.clientrc')
     }

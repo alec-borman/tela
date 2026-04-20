@@ -24,18 +24,21 @@ pub async fn orchestrate(domain: &Domain) -> Vec<String> {
             if api_key.is_empty() || api_key == "dummy_key_for_ci_test" {
                 // Return mock fallback for missing/dummy key to avoid crashing testing
                 return format!(
-                    "diff --git a/{} b/{}\n--- a/{}\n+++ b/{}\n@@ -1,1 +1,2 @@\n+// Feature {} API key gracefully handled\n",
-                    f.target, f.target, f.target, f.target, f.name
+                    "### Contextual Brief\nFeature {} API key gracefully handled\n### Scope\n{}\n### Acceptance Criteria\n1. Dummy requirement",
+                    f.name, f.target
                 );
             }
 
-            let system_instruction = "You are the Unbound Implementer operating under the Teleportation Protocol v8.2. \
-                You MUST output ONLY a unified diff reflecting the architectural changes based on the feature target and dimension contributions. \
-                Do not output any introductory or concluding text, only the ```diff ... ``` block.";
+            let system_instruction = "You are the Context Oracle operating under the Teleportation Protocol v8.2. You MUST output ONLY a strict Markdown Test-Driven Boundary (TDB) containing Contextual Brief, Scope, and Acceptance Criteria. Do not output any introductory or concluding text.";
+            
+            let mut req_str = String::new();
+            for (i, req) in f.requirements.iter().enumerate() {
+                req_str.push_str(&format!("{}. {}\n", i + 1, req));
+            }
             
             let prompt = format!(
-                "Implement feature: {}\nTarget: {}\nRequirements: {:?}\nDimensions: {:?}", 
-                f.description, f.target, f.requirements, f.dimension_contributions
+                "Generate the Test-Driven Boundary for feature: {}.\n\n### Contextual Brief\n{}\n\n### Scope\n{}\n\n### Acceptance Criteria\n{}\n\n### Architectural Constraints\n{:?}", 
+                f.name, f.description, f.target, req_str, f.dimension_contributions
             );
 
             let payload = json!({
@@ -75,15 +78,6 @@ pub async fn orchestrate(domain: &Domain) -> Vec<String> {
                 .as_str()
                 .unwrap_or("");
 
-            // Naive diff extraction
-            if let Some(start) = text.find("```diff") {
-                let diff_content = &text[start + 7..];
-                if let Some(end) = diff_content.find("```") {
-                    return diff_content[..end].trim().to_string();
-                }
-            }
-
-            // Fallback to returning raw text
             text.trim().to_string()
         });
         handles.push(handle);

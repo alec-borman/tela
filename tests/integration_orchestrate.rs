@@ -51,7 +51,7 @@ domain "swarm_test" "1.0.0" {
     // 3. Verify parallel execution and output aggregation gracefully falling back
     assert!(stdout.contains("agent_alpha"), "Missing alpha graceful output");
     assert!(stdout.contains("agent_beta"), "Missing beta graceful output");
-    assert!(stdout.contains("API key gracefully handled"), "Mock fallback diff missing");
+    assert!(stdout.contains("API key gracefully handled"), "Mock fallback Markdown TDB missing");
 
     // Clean up
     let _ = fs::remove_file(blueprint_path);

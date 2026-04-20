@@ -6,7 +6,6 @@ use teleportation_steel::compiler::scanner::{Scanner, CodeChunk};
 use teleportation_steel::compiler::embedder::Vector1024;
 use teleportation_steel::indexer::lance_db::LanceDbConnection;
 use teleportation_steel::compiler::delta::calculate_parity;
-use std::path::Path;
 use std::fs;
 
 #[derive(Debug)]

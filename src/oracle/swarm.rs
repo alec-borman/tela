@@ -1,6 +1,5 @@
 // Swarm orchestrator
 use crate::parser::ast::Domain;
-use futures::future::join_all;
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::env;
@@ -13,11 +12,8 @@ pub async fn orchestrate(domain: &Domain) -> Vec<String> {
         Err(_) => String::new(),
     };
 
-    let client = Client::new();
-
     for feature in &domain.features {
         let f = feature.clone();
-        let client = client.clone();
         let api_key = api_key.clone();
         
         let handle = tokio::spawn(async move {
@@ -29,6 +25,7 @@ pub async fn orchestrate(domain: &Domain) -> Vec<String> {
                 );
             }
 
+            let client = Client::new();
             let system_instruction = "You are the Context Oracle operating under the Teleportation Protocol v8.2. You MUST output ONLY a strict Markdown Test-Driven Boundary (TDB) containing Contextual Brief, Scope, and Acceptance Criteria. Do not output any introductory or concluding text.";
             
             let mut req_str = String::new();
@@ -84,8 +81,8 @@ pub async fn orchestrate(domain: &Domain) -> Vec<String> {
     }
 
     let mut results = Vec::new();
-    for res in join_all(handles).await {
-        if let Ok(sim_diff) = res {
+    for handle in handles {
+        if let Ok(sim_diff) = handle.await {
             results.push(sim_diff);
         }
     }

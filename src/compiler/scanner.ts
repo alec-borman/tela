@@ -70,7 +70,7 @@ export class Scanner {
   private extractTsChunks(filePath: string): CodeChunk[] {
     const content = fs.readFileSync(filePath, 'utf-8');
     const parser = filePath.endsWith('.tsx') ? this.tsxParser : this.tsParser;
-    const tree = parser.parse(content);
+    const tree = parser.parse(content, undefined, { bufferSize: Math.max(1024 * 1024, content.length * 2) });
     const chunks: CodeChunk[] = [];
 
     this.traverseTsAst(tree.rootNode, content, filePath, 0, chunks);

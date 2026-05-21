@@ -70,7 +70,8 @@ impl Scanner {
     fn extract_ast_chunks(&self, file_path: &Path, chunks: &mut Vec<CodeChunk>) {
         if let Ok(content) = fs::read_to_string(file_path) {
             let mut parser = tree_sitter::Parser::new();
-            parser.set_language(&tree_sitter_rust::language()).unwrap();
+            let language = tree_sitter_rust::LANGUAGE.into();
+            parser.set_language(&language).unwrap();
             
             if let Some(tree) = parser.parse(&content, None) {
                 self.traverse_rust_ast(tree.root_node(), &content, file_path, 0, chunks);

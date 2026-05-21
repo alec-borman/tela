@@ -202,7 +202,7 @@ pub async fn orchestrate(domain: &Domain) -> Vec<String> {
                     message_history.push(json!({ "role": "assistant", "content": patch_text }));
                     message_history.push(json!({ 
                         "role": "user", 
-                        "content": format!("// ARCHITECTURAL REGRESSION DETECTED. Vector Delta is {,.}. You drifted from the target geometry. Output a new patch.", sim_delta) 
+                        "content": format!("// ARCHITECTURAL REGRESSION DETECTED. Vector Delta is {}. You drifted from the target geometry. Output a new patch.", sim_delta) 
                     }));
                     retries += 1;
                     continue;
@@ -215,7 +215,7 @@ pub async fn orchestrate(domain: &Domain) -> Vec<String> {
                 return tdb_text;
             }
             
-            format!("{}\n// Vector Delta Converged to: {,.}", final_patch, final_delta)
+            format!("{}\n// Vector Delta Converged to: {}", final_patch, final_delta)
         });
         handles.push(handle);
     }

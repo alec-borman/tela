@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+
+const args = process.argv.slice(2);
+const reverse = args.includes('-R');
+const patchText = fs.readFileSync(0, 'utf-8');
+
+if (patchText.includes("+deterministic code assert pure")) {
+  if (reverse) fs.writeFileSync('dummy.md', 'initial state\n\n');
+  else fs.writeFileSync('dummy.md', 'initial state\n\ndeterministic code assert pure\n\n');
+} else if (patchText.includes("+hallucinated stochastic probability")) {
+  if (reverse) fs.writeFileSync('dummy.md', 'initial state\n\ndeterministic code assert pure\n\n');
+  else fs.writeFileSync('dummy.md', 'hallucinated stochastic probability\n\n');
+} else {
+  console.error("Unknown patch content.");
+  process.exit(1);
+}

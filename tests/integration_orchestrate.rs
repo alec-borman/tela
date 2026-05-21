@@ -40,7 +40,8 @@ domain "swarm_test" "1.0.0" {
             "run", "--release", "--bin", "telac", "--", 
             "orchestrate", blueprint_path
         ])
-        .env("GEMINI_API_KEY", "dummy_key_for_ci_test")
+        .env("OPENAI_API_KEY", "dummy_key_for_ci_test")
+        .env("ANTHROPIC_API_KEY", "dummy_key_for_ci_test")
         .output()
         .expect("Failed to execute telac orchestrate");
         

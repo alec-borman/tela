@@ -32,9 +32,18 @@ export class Scanner {
   /**
    * Scans the directory and returns all extracted chunks.
    */
-  public scanDirectory(dir: string = this.projectRoot): CodeChunk[] {
+  public scanDirectory(targetPath: string = this.projectRoot): CodeChunk[] {
     const chunks: CodeChunk[] = [];
-    const files = this.getFiles(dir);
+    let files: string[] = [];
+
+    if (fs.existsSync(targetPath)) {
+      const stats = fs.statSync(targetPath);
+      if (stats.isFile()) {
+        files = [targetPath];
+      } else if (stats.isDirectory()) {
+        files = this.getFiles(targetPath);
+      }
+    }
 
     for (const file of files) {
       if (file.endsWith('.ts') || file.endsWith('.tsx')) {
@@ -87,14 +96,13 @@ export class Scanner {
       'interface_declaration',
       'type_alias_declaration',
       'enum_declaration',
-      'export_statement',
-      'lexical_declaration' // const/let at top level
+      'export_statement'
     ].includes(kind);
 
     if (isChunk) {
       const content = source.substring(node.startIndex, node.endIndex);
       if (content.length > 20) { // Skip tiny chunks
-        const vector = this.projectChunkToVector(content, depth);
+        const vector = this.projectChunkToVector(node, depth);
         chunks.push({
           filePath,
           content,
@@ -121,7 +129,10 @@ export class Scanner {
     for (const block of blocks) {
       if (block.trim().length < 10) continue;
       const depth = block.startsWith(' ') || block.startsWith('\t') ? 2 : 1;
-      const vector = this.projectChunkToVector(block, depth);
+      
+      const tree = this.tsParser.parse(block);
+      const vector = this.projectChunkToVector(tree.rootNode, depth);
+      
       chunks.push({
         filePath,
         content: block,
@@ -133,37 +144,26 @@ export class Scanner {
     return chunks;
   }
 
-  private projectChunkToVector(content: string, depth: number): Vector1024 {
+  private projectChunkToVector(node: Parser.SyntaxNode, startDepth: number): Vector1024 {
     const vector = new Float64Array(1024);
-    const weight = calculateDepthDecay(depth);
 
-    const keywords: Record<string, string> = {
-      "arch:determinism": "deterministic|pure|const|assert|verify",
-      "arch:grammar_strictness": "grammar|parser|lexer|token|ll1",
-      "arch:memory_safety": "unsafe|box|pin|arc|mutex|ref",
-      "arch:ergonomics": "api|interface|ui|ux|ergonomic",
-      "arch:rapid_prototyping": "mock|sim|prototype|scaffold",
-      "arch:decoupling": "interface|trait|abstract|inject|dependency",
-      "arch:performance": "fast|perf|optimize|bench|wasm",
-      "arch:sovereignty": "sovereign|local|hermetic|standalone",
-      "arch:vector_fidelity": "vector|embedding|dimension|1024",
-      "arch:parity_requirement": "parity|check|delta|similarity",
-      "arch:human_authority": "architect|producer|signoff|manual",
-      "arch:unification": "unify|cross|domain|projection",
-      "arch:domain_isolation": "isolate|sandbox|hermetic|boundary",
+    const traverse = (currentNode: Parser.SyntaxNode, currentDepth: number) => {
+      const typeStr = currentNode.type;
+      let hash = 0;
+      for (let i = 0; i < typeStr.length; i++) {
+        hash = (Math.imul(31, hash) + typeStr.charCodeAt(i)) | 0;
+      }
+      const index = Math.abs(hash) % 1024;
+      const weight = calculateDepthDecay(currentDepth);
+      vector[index] += weight;
+
+      for (let i = 0; i < currentNode.childCount; i++) {
+        const child = currentNode.child(i);
+        if (child) traverse(child, currentDepth + 1);
+      }
     };
 
-    for (const [key, pattern] of Object.entries(keywords)) {
-      const regex = new RegExp(pattern, 'gi');
-      const matches = content.match(regex);
-      if (matches) {
-        const index = getDimensionIndex(key);
-        if (index !== undefined) {
-          vector[index] += matches.length * weight;
-        }
-      }
-    }
-
+    traverse(node, startDepth);
     return vector;
   }
 

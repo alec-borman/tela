@@ -1,8 +1,8 @@
-name: Teleportation Gatekeeper
+name: The Gatekeeper (Public Entropy Defense)
 
-on:
-  pull_request:
-    branches: [ main ]
+on: 
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 jobs:
   gatekeeper:
@@ -10,55 +10,64 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: alec-borman/tela
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          
-      - name: Install JS dependencies
-        run: npm install
-        
+          ref: ${{ github.event.pull_request.head.sha }}
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
-        
-      - name: Build telac
-        run: cargo build --release
-        
-      - name: Run JS Delta Check
+
+      - name: Build Sovereign Compiler (telac)
+        run: cargo build --release --bin telac
+
+
+      - name: Extract Coordinate and Verify GMN Parity
+        id: verify_parity
         run: |
-          # Generate current vector
-          npx tsx src/bin/check.ts code-vector . > current_vector.json
-          # Assuming target_vector.json is provided in the repository or generated
-          # For this workflow, we will run the delta check
-          npx tsx src/bin/check.ts delta --target target_vector.json --current current_vector.json
+          TELA_FILES=$(find . -type f -name "*.tela" -not -path "*/node_modules/*" -not -path "*/target/*")
           
-      - name: Run Rust Delta Check
-        id: delta_check
-        run: |
-          # Run telac delta for the primary .tela file (assuming sprint_complete.tela for now)
-          # In a real scenario, this would dynamically select the relevant .tela file
-          delta=$(./target/release/telac delta sprint_complete.tela)
-          echo "delta=$delta" >> $GITHUB_OUTPUT
-          
-      - name: Post PR Comment
-        uses: actions/github-script@v7
+          if [ -z "$TELA_FILES" ]; then
+            echo "::error::No .tela file found in this Pull Request."
+            echo "reject_reason=missing_tela" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          TELA_FILE=$(echo "$TELA_FILES" | head -n 1)
+          echo "Found coordinate: $TELA_FILE"
+          sim=$(./target/release/telac delta "$TELA_FILE")
+          diff=$(echo "1 - $sim" | bc)
+          echo "delta=$diff" >> $GITHUB_OUTPUT
+
+      - name: Reject PR (If Missing .tela or GMN Delta > 0.02)
+        if: always()
+        uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const delta = '${{ steps.delta_check.outputs.delta }}';
-            const body = `### Teleportation Gatekeeper Results 🚀\n\n**Rust Delta Check:** \`${delta}\`\n\nIf the delta is below the threshold (e.g., 0.98), please review the architectural alignment.`;
+            const reason = '${{ steps.verify_parity.outputs.reject_reason }}';
+            let message = '### Teleportation Gatekeeper Results �x\n\n';
             
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            if (reason === 'missing_tela') {
+              message += 'This Pull Request contains code modifications without a corresponding `.tela` coordinate file. All changes must be mathematically accounted for in the 1024-dimension space. Please define your intent in ` .tela` file and resubmit.';
+            } else {
+              const delta = parseFloat('${{ steps.verify_parity.outputs.delta }}');
+              if (delta > 0.02) {
+                message += `🚀 **GMN Structural Graph Check Failed!**\\n\\nThe Vector Delta ($$\\Delta$$) is greater than 0.02 (actual: ${delta}). If you attempted a lateral move or spoofed token similarity, the Graph Matching Network has mathematically exposed the hack.\n\nInitiating automated Gradient Descent feedback loop on the PR to recover geometry.`\
+                ;
+              } else {
+                message += `  Movement mathematically validated. Parity check passed. GMN geometry is stable.`;
+              }
+            }
+            
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: body
+              issue_number: context.issue.number,
+              body: message
             });
+            
+            if (reason === 'missing_tela' || parseFloat('${{ steps.verify_parity.outputs.delta }}') > 0.02) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                state: 'closed'
+              });
+           }
           
-      - name: Verify Fingerprints
-        run: |
-          # Ensure .tela files match their fingerprints
-          # In a real CI, we would compare against the baseline in the PR
-          echo "Verifying fingerprints..."

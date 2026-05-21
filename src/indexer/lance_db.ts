@@ -30,7 +30,9 @@ export class LanceDBManager {
       return await this.db!.openTable(this.tableName);
     } else {
       // Create empty table with schema
-      return await this.db!.createEmptyTable(this.tableName, this.getSchema());
+      const table = await this.db!.createEmptyTable(this.tableName, this.getSchema());
+      try { await table.createIndex('content', { config: lancedb.Index.fts() }); } catch(err) { console.warn('FTS ignored'); }
+      return table;
     }
   }
 

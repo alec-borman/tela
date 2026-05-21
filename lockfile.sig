@@ -1,4 +1,4 @@
-Signature: State Oracle
+Signature: v13.0.0-Security-Hotfix
 Track: B
-Fingerprint: e8ddb24d277a499e47081ece913783279511634b6c5133ce209d4801d02ba281
-Timestamp: 2026-04-03T04:16:54.742Z
+Fingerprint: 19a8d6250670ff38325d7c3f7ae5696340ffd9f7bf2b0f388c6abf8e4c1ca29c
+Timestamp: 2026-05-21T00:11:21.221Z

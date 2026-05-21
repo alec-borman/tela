@@ -133,10 +133,17 @@ fn main() {
                 xml_files.push_str(&format!("\n<file path=\"{}\">\n{}\n</file>", path, content));
             }
 
+            let system_instructions_path = std::path::Path::new("docs/System_instructions_AI_Studio.md");
+            let system_instructions = std::fs::read_to_string(system_instructions_path).unwrap_or_else(|_| {
+                "# SYSTEM INSTRUCTION: The Unbound Implementer\n".to_string()
+            });
+
             let xml_output = format!(
 r#"<tela_teleportation_payload>
 <system_instructions>
-You are an Unbound Implementer bound by the Teleportation Protocol v8.2.
+<![CDATA[
+{}
+]]>
 </system_instructions>
 <directory_structure>
 mock_dir/
@@ -144,6 +151,7 @@ mock_dir/
 <files>{}
 </files>
 </tela_teleportation_payload>"#,
+                system_instructions,
                 xml_files
             );
 

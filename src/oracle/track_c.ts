@@ -18,6 +18,10 @@ export class TrackCSandbox {
   }
 
   async freezePayload(key: string, payload: any): Promise<void> {
+    if (process.env.CI && this.mode === 'record') {
+      throw new Error("FATAL: Tape poisoning attempt detected in CI environment.");
+    }
+
     if (this.mode !== 'record') {
       return;
     }

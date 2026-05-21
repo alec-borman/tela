@@ -321,7 +321,15 @@ async function main() {
         }
       }
 
-      let xmlOutput = `<tela_teleportation_payload>\n<system_instructions>You are an Unbound Implementer bound by the Teleportation Protocol v8.2.\nYou do not architect. You solve terrain to match the provided context and intent.\nOutput ONLY a unified diff (patch) inside a \`\`\`diff code block. Make the tests pass.</system_instructions>\n\n<directory_structure>\n`;
+      let systemInstructions = '';
+      try {
+        systemInstructions = require('fs').readFileSync(require('path').join(process.cwd(), 'docs', 'System_instructions_AI_Studio.md'), 'utf-8');
+      } catch (e) {
+        systemInstructions = '# SYSTEM INSTRUCTION: The Unbound Implementer\n' +
+        'You do not architect. You solve terrain to match the provided context and intent.\n' +
+        'Output ONLY a unified diff (patch) inside a diff code block. Make the tests pass.';
+      }
+      let xmlOutput = "<tela_teleportation_payload>\n<system_instructions>\n<![CDATA[\n" + systemInstructions + "\n]]>\n</system_instructions>\n\n<directory_structure>\n";
 
       const sortedPaths = Array.from(filePathsToPack).sort();
       xmlOutput += sortedPaths.join('\n');
@@ -344,6 +352,12 @@ async function main() {
     }
     case 'apply': {
       const patchFile = args[1];
+      
+      if (patchFile && !/^[a-zA-Z0-9_\-\.]+\.patch$/.test(patchFile)) {
+        console.error('FATAL: Invalid patch filename');
+        process.exit(1);
+      }
+      
       let targetPath = '';
       for (let i = 2; i < args.length; i++) {
         if (args[i] === '--target' && i + 1 < args.length) {

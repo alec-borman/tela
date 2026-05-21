@@ -14,7 +14,7 @@ if (!out.includes('Successfully packed context into tela_context.xml')) {
 
 const content = fs.readFileSync(xmlPath, 'utf-8');
 if (!content.includes('<tela_teleportation_payload>')) throw new Error('Missing payload wrapper');
-if (!content.includes('<system_instructions>You are an Unbound Implementer bound by the Teleportation Protocol v8.2.')) throw new Error('Missing system instructions');
+if (!content.includes('# SYSTEM INSTRUCTION: The Unbound Implementer')) throw new Error('Missing system instructions');
 if (!content.includes('<directory_structure>')) throw new Error('Missing directory structure');
 if (!content.includes('<files>')) throw new Error('Missing files');
 

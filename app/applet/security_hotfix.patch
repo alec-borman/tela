@@ -1,0 +1,55 @@
+--- a/src/bin/check.ts
++++ b/src/bin/check.ts
+@@ -348,6 +348,11 @@
+     case 'apply': {
+       const patchFile = args[1];
+       
++      if (patchFile && !/^[a-zA-Z0-9_\-\.]+\.patch$/.test(patchFile)) {
++        console.error('FATAL: Invalid patch filename');
++        process.exit(1);
++      }
++      
+       let targetPath = '';
+       for (let i = 2; i < args.length; i++) {
+         if (args[i] === '--target' && i + 1 < args.length) {
+--- a/.github/workflows/gatekeeper.yml
++++ b/.github/workflows/gatekeeper.yml
+@@ -25,7 +25,7 @@
+           fi
+ 
+           TELA_FILE=$(echo "$TELA_FILES" | head -n 1)
+           echo "Found coordinate: $TELA_FILE"
+-          sim=$(./target/release/telac delta $TELA_FILE)
++          sim=$(./target/release/telac delta "$TELA_FILE")
+           diff=$(echo "1 - $sim" | bc)
+           echo "delta=$diff" >> $GITHUB_OUTPUT
+--- a/src/oracle/track_c.rs
++++ b/src/oracle/track_c.rs
+@@ -26,6 +26,14 @@
+ 
+     /// Freezes a chaotic JSON payload into the Oracle Tape.
+     pub fn freeze_payload(payload: &str) -> String {
++        if env::var("CI").is_ok() {
++            if let Ok(mode) = env::var("TELA_TAPE_MODE") {
++                if mode == "record" {
++                    panic!("FATAL: Tape poisoning attempt detected in CI environment.");
++                }
++            }
++        }
++        
+         let hash = Self::compute_hash(payload);
+         let mut tape_guard = ORACLE_TAPE.lock().unwrap();
+         let tape = tape_guard.get_or_insert_with(HashMap::new);
+--- a/src/oracle/track_c.ts
++++ b/src/oracle/track_c.ts
+@@ -18,6 +18,10 @@
+   }
+ 
+   async freezePayload(key: string, payload: any): Promise<void> {
++    if (process.env.CI && this.mode === 'record') {
++      throw new Error("FATAL: Tape poisoning attempt detected in CI environment.");
++    }
++
+     if (this.mode !== 'record') {
+       return;
+     }

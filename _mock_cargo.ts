@@ -64,12 +64,20 @@ if (args[0] === 'test') {
       console.error("error: Cargo.toml missing reqwest dependency.");
       failed = true;
     }
-    if (!oracle_swarm.includes('GEMINI_API_KEY')) {
-      console.error("error: swarm.rs missing GEMINI_API_KEY environment variable check.");
+    if (!oracle_swarm.includes('OPENAI_API_KEY')) {
+      console.error("error: swarm.rs missing OPENAI_API_KEY environment variable check.");
       failed = true;
     }
-    if (!oracle_swarm.includes('generativelanguage.googleapis.com')) {
-      console.error("error: swarm.rs missing Gemini API endpoint.");
+    if (!oracle_swarm.includes('ANTHROPIC_API_KEY')) {
+      console.error("error: swarm.rs missing ANTHROPIC_API_KEY environment variable check.");
+      failed = true;
+    }
+    if (!oracle_swarm.includes('api.openai.com')) {
+      console.error("error: swarm.rs missing api.openai.com endpoint.");
+      failed = true;
+    }
+    if (!oracle_swarm.includes('api.anthropic.com')) {
+      console.error("error: swarm.rs missing api.anthropic.com endpoint.");
       failed = true;
     }
     if (!oracle_swarm.includes('reqwest::Client')) {

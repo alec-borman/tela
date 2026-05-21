@@ -32,6 +32,14 @@ impl TrackCSandbox {
 
     /// Freezes a chaotic JSON payload into the Oracle Tape.
     pub fn freeze_payload(payload: &str) -> String {
+        if env::var("CI").is_ok() {
+            if let Ok(mode) = env::var("TELA_TAPE_MODE") {
+                if mode == "record" {
+                    panic!("FATAL: Tape poisoning attempt detected in CI environment.");
+                }
+            }
+        }
+        
         let hash = Self::compute_hash(payload);
         let mut tape_guard = ORACLE_TAPE.lock().unwrap();
         let tape = tape_guard.get_or_insert_with(HashMap::new);

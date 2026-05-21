@@ -30,7 +30,7 @@ fn test_native_tela_pack_and_hermetic_vault() {
     let xml_content = fs::read_to_string(xml_path).unwrap();
     assert!(xml_content.contains("<tela_teleportation_payload>"), "Missing root XML tag.");
     assert!(xml_content.contains("<system_instructions>"), "Missing system instructions.");
-    assert!(xml_content.contains("You are an Unbound Implementer bound by the Teleportation Protocol v8.2."), "System instructions text mismatch.");
+    assert!(xml_content.contains("# SYSTEM INSTRUCTION: The Unbound Implementer"), "System instructions text mismatch.");
     assert!(xml_content.contains("<file path="), "Missing file entries in payload.");
     
     // Clean up

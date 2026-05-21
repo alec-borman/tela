@@ -129,7 +129,7 @@ pub async fn orchestrate(domain: &Domain) -> Vec<String> {
                         "input_schema": {
                             "type": "object",
                             "properties": {
-                                "patch": |
+                                "patch": {
                                     "type": "string",
                                     "description": "The unified diff containing the exact file changes."
                                 }
